@@ -10,33 +10,132 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as ConfiguracaoInicialRouteImport } from './routes/configuracao-inicial'
+import { Route as AuthenticatedCaixaRouteImport } from './routes/_authenticated/caixa'
+import { Route as AuthenticatedPainelRouteImport } from './routes/_authenticated/painel'
+import { Route as AuthenticatedPainelIndexRouteImport } from './routes/_authenticated/painel.index'
+import { Route as AuthenticatedPainelConfigRouteImport } from './routes/_authenticated/painel.config'
+import { Route as AuthenticatedPainelHistoricoRouteImport } from './routes/_authenticated/painel.historico'
+import { Route as AuthenticatedPainelDiaDataRouteImport } from './routes/_authenticated/painel.dia.$data'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConfiguracaoInicialRoute = ConfiguracaoInicialRouteImport.update({
+  id: '/configuracao-inicial',
+  path: '/configuracao-inicial',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedCaixaRoute = AuthenticatedCaixaRouteImport.update({
+  id: '/caixa',
+  path: '/caixa',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPainelRoute = AuthenticatedPainelRouteImport.update({
+  id: '/painel',
+  path: '/painel',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedPainelIndexRoute =
+  AuthenticatedPainelIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedPainelRoute,
+  } as any)
+const AuthenticatedPainelConfigRoute =
+  AuthenticatedPainelConfigRouteImport.update({
+    id: '/config',
+    path: '/config',
+    getParentRoute: () => AuthenticatedPainelRoute,
+  } as any)
+const AuthenticatedPainelHistoricoRoute =
+  AuthenticatedPainelHistoricoRouteImport.update({
+    id: '/historico',
+    path: '/historico',
+    getParentRoute: () => AuthenticatedPainelRoute,
+  } as any)
+const AuthenticatedPainelDiaDataRoute =
+  AuthenticatedPainelDiaDataRouteImport.update({
+    id: '/dia/$data',
+    path: '/dia/$data',
+    getParentRoute: () => AuthenticatedPainelRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/configuracao-inicial': typeof ConfiguracaoInicialRoute
+  '/caixa': typeof AuthenticatedCaixaRoute
+  '/painel': typeof AuthenticatedPainelRouteWithChildren
+  '/painel/config': typeof AuthenticatedPainelConfigRoute
+  '/painel/historico': typeof AuthenticatedPainelHistoricoRoute
+  '/painel/': typeof AuthenticatedPainelIndexRoute
+  '/painel/dia/$data': typeof AuthenticatedPainelDiaDataRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/configuracao-inicial': typeof ConfiguracaoInicialRoute
+  '/caixa': typeof AuthenticatedCaixaRoute
+  '/painel/config': typeof AuthenticatedPainelConfigRoute
+  '/painel/historico': typeof AuthenticatedPainelHistoricoRoute
+  '/painel': typeof AuthenticatedPainelIndexRoute
+  '/painel/dia/$data': typeof AuthenticatedPainelDiaDataRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/configuracao-inicial': typeof ConfiguracaoInicialRoute
+  '/_authenticated/caixa': typeof AuthenticatedCaixaRoute
+  '/_authenticated/painel': typeof AuthenticatedPainelRouteWithChildren
+  '/_authenticated/painel/config': typeof AuthenticatedPainelConfigRoute
+  '/_authenticated/painel/historico': typeof AuthenticatedPainelHistoricoRoute
+  '/_authenticated/painel/': typeof AuthenticatedPainelIndexRoute
+  '/_authenticated/painel/dia/$data': typeof AuthenticatedPainelDiaDataRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/configuracao-inicial'
+    | '/caixa'
+    | '/painel'
+    | '/painel/config'
+    | '/painel/historico'
+    | '/painel/'
+    | '/painel/dia/$data'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/configuracao-inicial'
+    | '/caixa'
+    | '/painel/config'
+    | '/painel/historico'
+    | '/painel'
+    | '/painel/dia/$data'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/configuracao-inicial'
+    | '/_authenticated/caixa'
+    | '/_authenticated/painel'
+    | '/_authenticated/painel/config'
+    | '/_authenticated/painel/historico'
+    | '/_authenticated/painel/'
+    | '/_authenticated/painel/dia/$data'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  ConfiguracaoInicialRoute: typeof ConfiguracaoInicialRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +147,99 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/configuracao-inicial': {
+      id: '/configuracao-inicial'
+      path: '/configuracao-inicial'
+      fullPath: '/configuracao-inicial'
+      preLoaderRoute: typeof ConfiguracaoInicialRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/caixa': {
+      id: '/_authenticated/caixa'
+      path: '/caixa'
+      fullPath: '/caixa'
+      preLoaderRoute: typeof AuthenticatedCaixaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/painel': {
+      id: '/_authenticated/painel'
+      path: '/painel'
+      fullPath: '/painel'
+      preLoaderRoute: typeof AuthenticatedPainelRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/painel/': {
+      id: '/_authenticated/painel/'
+      path: '/'
+      fullPath: '/painel/'
+      preLoaderRoute: typeof AuthenticatedPainelIndexRouteImport
+      parentRoute: typeof AuthenticatedPainelRoute
+    }
+    '/_authenticated/painel/config': {
+      id: '/_authenticated/painel/config'
+      path: '/config'
+      fullPath: '/painel/config'
+      preLoaderRoute: typeof AuthenticatedPainelConfigRouteImport
+      parentRoute: typeof AuthenticatedPainelRoute
+    }
+    '/_authenticated/painel/historico': {
+      id: '/_authenticated/painel/historico'
+      path: '/historico'
+      fullPath: '/painel/historico'
+      preLoaderRoute: typeof AuthenticatedPainelHistoricoRouteImport
+      parentRoute: typeof AuthenticatedPainelRoute
+    }
+    '/_authenticated/painel/dia/$data': {
+      id: '/_authenticated/painel/dia/$data'
+      path: '/dia/$data'
+      fullPath: '/painel/dia/$data'
+      preLoaderRoute: typeof AuthenticatedPainelDiaDataRouteImport
+      parentRoute: typeof AuthenticatedPainelRoute
+    }
   }
 }
 
+interface AuthenticatedPainelRouteChildren {
+  AuthenticatedPainelConfigRoute: typeof AuthenticatedPainelConfigRoute
+  AuthenticatedPainelHistoricoRoute: typeof AuthenticatedPainelHistoricoRoute
+  AuthenticatedPainelIndexRoute: typeof AuthenticatedPainelIndexRoute
+  AuthenticatedPainelDiaDataRoute: typeof AuthenticatedPainelDiaDataRoute
+}
+
+const AuthenticatedPainelRouteChildren: AuthenticatedPainelRouteChildren = {
+  AuthenticatedPainelConfigRoute: AuthenticatedPainelConfigRoute,
+  AuthenticatedPainelHistoricoRoute: AuthenticatedPainelHistoricoRoute,
+  AuthenticatedPainelIndexRoute: AuthenticatedPainelIndexRoute,
+  AuthenticatedPainelDiaDataRoute: AuthenticatedPainelDiaDataRoute,
+}
+
+const AuthenticatedPainelRouteWithChildren =
+  AuthenticatedPainelRoute._addFileChildren(AuthenticatedPainelRouteChildren)
+
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedCaixaRoute: typeof AuthenticatedCaixaRoute
+  AuthenticatedPainelRoute: typeof AuthenticatedPainelRouteWithChildren
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedCaixaRoute: AuthenticatedCaixaRoute,
+  AuthenticatedPainelRoute: AuthenticatedPainelRouteWithChildren,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  ConfiguracaoInicialRoute: ConfiguracaoInicialRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
