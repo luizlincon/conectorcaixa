@@ -1,0 +1,1 @@
+ALTER POLICY "ler unidades" ON public.unidades USING (id = public.minha_unidade() OR public.has_role(auth.uid(), 'dono'));
