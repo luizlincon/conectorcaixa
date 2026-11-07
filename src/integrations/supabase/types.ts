@@ -200,25 +200,43 @@ export type Database = {
       }
       unidades: {
         Row: {
+          ativa: boolean
+          codigo: string
           created_at: string
           data_inicio_assinatura: string
+          dias_funcionamento: number[]
+          dias_ilimitado: number[]
           horario_limite: string
           id: string
+          multiplo_avulso: number
           nome: string
+          valor_plano: number
         }
         Insert: {
+          ativa?: boolean
+          codigo: string
           created_at?: string
           data_inicio_assinatura?: string
+          dias_funcionamento?: number[]
+          dias_ilimitado?: number[]
           horario_limite?: string
           id?: string
+          multiplo_avulso?: number
           nome: string
+          valor_plano?: number
         }
         Update: {
+          ativa?: boolean
+          codigo?: string
           created_at?: string
           data_inicio_assinatura?: string
+          dias_funcionamento?: number[]
+          dias_ilimitado?: number[]
           horario_limite?: string
           id?: string
+          multiplo_avulso?: number
           nome?: string
+          valor_plano?: number
         }
         Relationships: []
       }
@@ -289,6 +307,14 @@ export type Database = {
       }
       hoje_sp: { Args: never; Returns: string }
       minha_unidade: { Args: never; Returns: string }
+      unidade_por_codigo: {
+        Args: { _codigo: string }
+        Returns: {
+          codigo: string
+          id: string
+          nome: string
+        }[]
+      }
     }
     Enums: {
       app_role: "dono" | "funcionario"

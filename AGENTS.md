@@ -30,6 +30,8 @@ use the editor.
 <!-- LOVABLE:END -->
 
 ## Project rules
+- Recover stale dynamic-module loads with a session-scoped, rate-limited page reload; never retry ordinary application errors or create reload loops.
+- Unit configuration is stored on `unidades`; public pre-login lookup must use `unidade_por_codigo` and expose only active-unit id, name and code, preserving authenticated table RLS.
 - Cash-check rules live as pure functions in `src/lib/regras.ts` (cents math) and are covered by `src/test/regras.test.ts`; server and UI both call `avaliar()` so results never diverge.
 - Login is phone + 4-digit PIN mapped to a synthetic email/derived password (`src/lib/auth-utils.ts`); public signup is disabled and accounts are created only by the owner via admin server functions.
 - Roles live in `user_roles` + `has_role()`; never store role on `usuarios`.

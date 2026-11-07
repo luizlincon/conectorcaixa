@@ -14,6 +14,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
+import { installModuleRecovery, recoverModuleLoad } from "@/lib/module-recovery";
 
 function NotFoundComponent() {
   return (
@@ -41,6 +42,7 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
   console.error(error);
   const router = useRouter();
   useEffect(() => {
+    if (recoverModuleLoad(error)) return;
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
   }, [error]);
 
@@ -125,6 +127,8 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
+
+  useEffect(() => installModuleRecovery(), []);
 
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange((event) => {
