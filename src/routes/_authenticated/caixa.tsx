@@ -12,7 +12,7 @@ import { brl, dataBR, DIAS, hojeSP, horaSP, parseBRL } from "@/lib/formato";
 import { diaSemana } from "@/lib/regras";
 import { comprimirFoto } from "@/lib/imagem";
 import { enviarFechamento } from "@/lib/caixa.functions";
-import { podeOperarCaixa } from "@/lib/permissoes";
+import { podeOperarCaixa, podeVerMeses } from "@/lib/permissoes";
 
 export const Route = createFileRoute("/_authenticated/caixa")({
   head: () => ({
@@ -90,7 +90,7 @@ function Caixa() {
     <main className="mx-auto min-h-screen max-w-md space-y-8 px-5 py-6">
       <header className="flex items-center justify-between"><Marca subtitulo={`Unidade ${sessao.unidadeNome}`} /><Button variant="ghost" size="icon" onClick={sair} aria-label="Sair"><LogOut /></Button></header>
       <h1 className="text-2xl font-bold">Acesso restrito</h1>
-      <p className="text-muted-foreground">Somente o dono pode abrir, fechar o caixa e consultar os meses.</p>
+      <p className="text-muted-foreground">Seu usuário não tem permissão para operar o caixa.</p>
     </main>
   );
 
@@ -102,7 +102,9 @@ function Caixa() {
         ) : (
           <Marca subtitulo={`Unidade ${sessao?.unidadeNome ?? ""}`} />
         )}
-        {etapa === "inicio" && <Button variant="ghost" size="icon" asChild><Link to="/painel" aria-label="Voltar ao painel"><ChevronLeft /></Link></Button>}
+        {etapa === "inicio" && (podeVerMeses(sessao?.papel)
+          ? <Button variant="ghost" size="icon" asChild><Link to="/painel" aria-label="Voltar ao painel"><ChevronLeft /></Link></Button>
+          : <Button variant="ghost" size="icon" onClick={sair} aria-label="Sair"><LogOut /></Button>)}
         {etapa !== "inicio" && <span className="text-sm text-muted-foreground">Passo {passo} de 4</span>}
       </header>
       {etapa !== "inicio" && (
