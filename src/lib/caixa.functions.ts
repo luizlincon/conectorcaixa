@@ -3,7 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { emailDoTelefone, senhaDoPin, soDigitos } from "./auth-utils";
 import { hojeSP } from "./formato";
-import { podeOperarCaixa } from "./permissoes";
+import { podeAcessarDia, podeOperarCaixa } from "./permissoes";
 
 const pin = z.string().regex(/^\d{4}$/, "PIN deve ter 4 dígitos");
 const telefone = z.string().transform(soDigitos).refine((t) => t.length >= 10 && t.length <= 11, "Telefone inválido");
@@ -14,7 +14,7 @@ async function admin() {
 
 async function exigirDono(ctx: { supabase: any; userId: string }) {
   const { data } = await ctx.supabase.rpc("has_role", { _user_id: ctx.userId, _role: "dono" });
-  if (!podeOperarCaixa(data ? "dono" : null)) throw new Error("Apenas o dono pode fazer isso.");
+  if (!data) throw new Error("Apenas o dono pode fazer isso.");
   const { data: u } = await ctx.supabase.from("usuarios").select("nome").eq("id", ctx.userId).single();
   return (u?.nome as string) ?? "Dono";
 }
@@ -58,7 +58,7 @@ async function criarConta(
   }
 }
 
-/* ---------- Fechamento exclusivo do dono ---------- */
+/* ---------- Fechamento do dia: dono e funcionário ---------- */
 
 const fotoSchema = z.object({
   tipo: z.enum(["hubbarber", "pagbank"]),
@@ -77,12 +77,22 @@ export const enviarFechamento = createServerFn({ method: "POST" })
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    await exigirDono(context);
-    const a = await admin();
-    const { data: u } = await a.from("usuarios").select("nome, unidade_id, ativo").eq("id", context.userId).single();
+    const [{ data: dono }, { data: funcionario }] = await Promise.all([
+      context.supabase.rpc("has_role", { _user_id: context.userId, _role: "dono" }),
+      context.supabase.rpc("has_role", { _user_id: context.userId, _role: "funcionario" }),
+    ]);
+    const papel = dono ? "dono" : funcionario ? "funcionario" : null;
+    if (!podeOperarCaixa(papel)) throw new Error("Sem permissão para fechar o caixa.");
+    const { data: u } = await context.supabase.from("usuarios").select("nome, unidade_id, ativo").eq("id", context.userId).single();
     if (!u?.ativo || !u.unidade_id) throw new Error("Usuário sem unidade ativa.");
-    for (const f of data.fotos) if (!f.path.startsWith(`${u.unidade_id}/`)) throw new Error("Foto inválida.");
     const hoje = hojeSP();
+    for (const f of data.fotos) {
+      const [unidadeFoto, diaFoto] = f.path.split("/");
+      if (unidadeFoto !== u.unidade_id || diaFoto !== hoje || !podeAcessarDia(papel, diaFoto, hoje)) {
+        throw new Error("Use fotos do caixa de hoje da sua unidade.");
+      }
+    }
+    const a = await admin();
     const { data: existente } = await a.from("fechamentos").select("*").eq("unidade_id", u.unidade_id).eq("data", hoje).maybeSingle();
     if (existente && existente.status !== "reaberto") throw new Error("O fechamento de hoje já foi enviado.");
 
