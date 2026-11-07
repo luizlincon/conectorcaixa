@@ -8,6 +8,13 @@
       "when": 1794026579794,
       "tag": "0000_conferente_caixa",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1794028245875,
+      "tag": "0001_caixa_operacoes_exclusivas_dono",
+      "breakpoints": true
     }
   ]
 }

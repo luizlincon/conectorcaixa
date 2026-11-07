@@ -1,14 +1,23 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, LockKeyhole } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { statusInfo, StatusSelo, type StatusCal } from "@/components/StatusSelo";
 import { agoraHHMM, brl, dataBR, hojeSP, MESES } from "@/lib/formato";
 import { fechamentosPeriodoQuery, feriadosQuery, iso, ultimoDiaMes, unidadeQuery } from "@/lib/dados-dono";
 import { diaSemana, statusDoDia, type Nivel } from "@/lib/regras";
 
-export const Route = createFileRoute("/_authenticated/painel/")({ component: Calendario });
+export const Route = createFileRoute("/_authenticated/painel/")({
+  head: () => ({ meta: [
+    { title: "Calendário mensal · Conferente de Caixa" },
+    { name: "description", content: "Fechamentos, alertas e feriados nacionais e de Brasília no calendário do dono." },
+    { property: "og:title", content: "Calendário mensal · Conferente de Caixa" },
+    { property: "og:description", content: "Fechamentos, alertas e feriados nacionais e de Brasília no calendário do dono." },
+    { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" },
+  ] }),
+  component: Calendario,
+});
 
 function Calendario() {
   const hoje = hojeSP();
@@ -54,6 +63,8 @@ function Calendario() {
         <Button variant="ghost" size="icon" onClick={() => mudar(1)} aria-label="Próximo mês"><ChevronRight /></Button>
       </div>
 
+      <Button asChild className="w-full"><Link to="/caixa"><LockKeyhole /> Fechar caixa de hoje</Link></Button>
+
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Kpi rotulo="Faturamento" valor={brl(avulso + assinatura)} destaque />
         <Kpi rotulo="Avulso" valor={brl(avulso)} />
@@ -77,7 +88,7 @@ function Calendario() {
             );
             const cls = `flex aspect-square flex-col items-center justify-center rounded-xl border ${info.cls}`;
             return status === "sem_expediente" || status === "futuro" ? (
-              <div key={d} className={cls} title={info.rotulo}>{conteudo}</div>
+               <div key={d} className={cls} title={feriados.find((f) => f.data === d)?.descricao ?? info.rotulo}>{conteudo}</div>
             ) : (
               <Link key={d} to="/painel/dia/$data" params={{ data: d }} className={`${cls} transition-transform active:scale-95`} title={info.rotulo}>{conteudo}</Link>
             );
@@ -87,6 +98,17 @@ function Calendario() {
           {(["verde", "amarelo", "vermelho", "nao_enviado"] as const).map((s) => <StatusSelo key={s} status={s} />)}
         </div>
       </div>
+
+      {feriados.some((f) => f.data >= de && f.data <= ate) && (
+        <section className="space-y-3">
+          <h2 className="text-lg font-bold">Observações · Feriados</h2>
+          <ul className="divide-y border-y">
+            {feriados.filter((f) => f.data >= de && f.data <= ate).map((f) => (
+              <li key={f.id} className="flex items-start gap-3 py-3 text-sm"><span className="shrink-0 font-semibold tabular">{dataBR(f.data)}</span><span className="text-muted-foreground">{f.descricao}</span></li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {abertos.length > 0 && (
         <div className="space-y-2">

@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -12,6 +12,7 @@ import { brl, dataBR, DIAS, hojeSP, horaSP, parseBRL } from "@/lib/formato";
 import { diaSemana } from "@/lib/regras";
 import { comprimirFoto } from "@/lib/imagem";
 import { enviarFechamento } from "@/lib/caixa.functions";
+import { podeOperarCaixa } from "@/lib/permissoes";
 
 export const Route = createFileRoute("/_authenticated/caixa")({
   head: () => ({
@@ -20,6 +21,8 @@ export const Route = createFileRoute("/_authenticated/caixa")({
       { name: "description", content: "Envie as fotos e os valores do fechamento do dia." },
       { property: "og:title", content: "Fechar caixa · Conferente de Caixa" },
       { property: "og:description", content: "Envie as fotos e os valores do fechamento do dia." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: Caixa,
@@ -40,10 +43,11 @@ function Caixa() {
 
   const { data: fechamento, isLoading } = useQuery({
     queryKey: ["fechamento-hoje", sessao?.unidadeId, hoje],
-    enabled: !!sessao?.unidadeId,
+    enabled: !!sessao?.unidadeId && podeOperarCaixa(sessao?.papel),
     queryFn: async () => {
+      if (!sessao?.unidadeId) return null;
       const { data } = await supabase.from("fechamentos").select("status, enviado_em, enviado_por_nome")
-        .eq("unidade_id", sessao!.unidadeId!).eq("data", hoje).maybeSingle();
+        .eq("unidade_id", sessao.unidadeId).eq("data", hoje).maybeSingle();
       return data;
     },
   });
@@ -51,7 +55,9 @@ function Caixa() {
   const bloqueado = fechamento && fechamento.status !== "reaberto";
 
   const enviar = async () => {
-    if (!sessao?.unidadeId || !hub || !pag) return;
+    if (!podeOperarCaixa(sessao?.papel) || !sessao?.unidadeId || !hub || !pag) return;
+    const maquina = parseBRL(vals.maquina), assinatura = parseBRL(vals.assinatura), dinheiro = parseBRL(vals.dinheiro);
+    if (maquina === null || assinatura === null || dinheiro === null) return;
     setEnviando(true);
     try {
       const fotos = [];
@@ -63,7 +69,7 @@ function Caixa() {
       }
       await enviarFechamento({
         data: {
-          maquina: parseBRL(vals.maquina)!, assinatura: parseBRL(vals.assinatura)!, dinheiro: parseBRL(vals.dinheiro)!, fotos,
+          maquina, assinatura, dinheiro, fotos,
         },
       });
       toast.success("Fechamento enviado!");
@@ -80,15 +86,23 @@ function Caixa() {
   const voltar: Record<Etapa, Etapa | null> = { inicio: null, hub: "inicio", pag: "hub", valores: "pag", revisar: "valores" };
   const passo = { inicio: 0, hub: 1, pag: 2, valores: 3, revisar: 4 }[etapa];
 
+  if (sessao && !podeOperarCaixa(sessao.papel)) return (
+    <main className="mx-auto min-h-screen max-w-md space-y-8 px-5 py-6">
+      <header className="flex items-center justify-between"><Marca subtitulo={`Unidade ${sessao.unidadeNome}`} /><Button variant="ghost" size="icon" onClick={sair} aria-label="Sair"><LogOut /></Button></header>
+      <h1 className="text-2xl font-bold">Acesso restrito</h1>
+      <p className="text-muted-foreground">Somente o dono pode abrir, fechar o caixa e consultar os meses.</p>
+    </main>
+  );
+
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col px-5 pb-8 pt-6">
       <header className="flex items-center justify-between">
         {voltar[etapa] ? (
-          <Button variant="ghost" size="sm" onClick={() => setEtapa(voltar[etapa]!)} className="-ml-2"><ChevronLeft /> Voltar</Button>
+          <Button variant="ghost" size="sm" onClick={() => { const anterior = voltar[etapa]; if (anterior) setEtapa(anterior); }} className="-ml-2"><ChevronLeft /> Voltar</Button>
         ) : (
           <Marca subtitulo={`Unidade ${sessao?.unidadeNome ?? ""}`} />
         )}
-        {etapa === "inicio" && <Button variant="ghost" size="icon" onClick={sair} aria-label="Sair"><LogOut /></Button>}
+        {etapa === "inicio" && <Button variant="ghost" size="icon" asChild><Link to="/painel" aria-label="Voltar ao painel"><ChevronLeft /></Link></Button>}
         {etapa !== "inicio" && <span className="text-sm text-muted-foreground">Passo {passo} de 4</span>}
       </header>
       {etapa !== "inicio" && (
@@ -108,7 +122,7 @@ function Caixa() {
             {isLoading ? null : bloqueado ? (
               <div className="rounded-2xl border border-ok/40 bg-ok-soft p-6 shadow-card">
                 <div className="flex items-center gap-3 text-ok"><Check className="size-7" /><span className="font-display text-2xl font-bold">Caixa enviado</span></div>
-                <p className="mt-3 text-lg">Enviado às <b className="tabular">{horaSP(fechamento.enviado_em!)}</b> por <b>{fechamento.enviado_por_nome}</b>.</p>
+                <p className="mt-3 text-lg">Enviado às <b className="tabular">{fechamento.enviado_em ? horaSP(fechamento.enviado_em) : "—"}</b> por <b>{fechamento.enviado_por_nome}</b>.</p>
                 <p className="mt-2 text-sm text-muted-foreground">Só o dono pode reabrir este fechamento.</p>
               </div>
             ) : (

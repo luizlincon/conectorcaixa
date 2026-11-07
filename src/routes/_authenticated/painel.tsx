@@ -4,6 +4,7 @@ import { CalendarDays, LineChart, LogOut, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Marca } from "@/components/Marca";
 import { sair, useSessao } from "@/hooks/use-sessao";
+import { podeVerMeses } from "@/lib/permissoes";
 
 export const Route = createFileRoute("/_authenticated/painel")({
   head: () => ({
@@ -12,6 +13,8 @@ export const Route = createFileRoute("/_authenticated/painel")({
       { name: "description", content: "Calendário de fechamentos, alertas e faturamento da unidade SCS." },
       { property: "og:title", content: "Painel do dono · Conferente de Caixa" },
       { property: "og:description", content: "Calendário de fechamentos, alertas e faturamento da unidade SCS." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: Painel,
@@ -27,9 +30,9 @@ function Painel() {
   const { data: sessao, isLoading } = useSessao();
   const navigate = useNavigate();
   useEffect(() => {
-    if (!isLoading && sessao?.papel !== "dono") navigate({ to: sessao ? "/caixa" : "/" });
+    if (!isLoading && !podeVerMeses(sessao?.papel)) navigate({ to: sessao ? "/caixa" : "/" });
   }, [isLoading, sessao, navigate]);
-  if (sessao?.papel !== "dono") return null;
+  if (!podeVerMeses(sessao?.papel)) return null;
 
   return (
     <div className="mx-auto min-h-screen max-w-3xl pb-28">
