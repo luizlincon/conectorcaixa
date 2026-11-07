@@ -1,4 +1,6 @@
 # Tarefas
+- [ ] Restringir leitura de unidades à própria unidade do funcionário ou ao dono; aceitar leitura pública autenticada de feriados no scan.
+- [ ] Verificar nome da unidade na conta de funcionário e painel na conta do dono.
 - [x] Bloquear INSERT direto de funcionário em fechamentos e fotos, sem alterar leitura ou upload (policies conferidas no banco).
 - [x] Validar envio autorizado com leitura e alertas em teste isolado e abertura da etapa de fotos na conta real de funcionário.
 - [ ] Confirmar envio real completo pelo app: depende das duas fotos e valores reais do dia; não registrar fechamento fictício.
