@@ -103,7 +103,7 @@ function Calendario() {
   );
 }
 
-function Kpi({ rotulo, valor, destaque, extra }: { rotulo: string; valor: string; destaque?: boolean; extra?: string }) {
+function Kpi({ rotulo, valor, destaque, extra }: { rotulo: string; valor: string; destaque?: boolean; extra?: string | undefined }) {
   return (
     <div className={`rounded-2xl border p-4 shadow-card ${destaque ? "bg-primary text-primary-foreground" : "bg-card"}`}>
       <p className={`text-xs uppercase tracking-wider ${destaque ? "opacity-70" : "text-muted-foreground"}`}>{rotulo}</p>

@@ -101,7 +101,7 @@ function Caixa() {
         {etapa === "inicio" && (
           <div className="flex flex-1 flex-col justify-between gap-8">
             <div>
-              <p className="text-sm uppercase tracking-[0.18em] text-muted-foreground">Olá, {sessao?.nome?.split(" ")[0]}</p>
+              <p className="text-sm uppercase tracking-[0.18em] text-muted-foreground">Olá, {sessao?.nome.split(" ")[0] ?? ""}</p>
               <h1 className="mt-2 text-4xl font-bold capitalize">{DIAS[diaSemana(hoje)]}</h1>
               <p className="text-2xl text-muted-foreground tabular">{dataBR(hoje)}</p>
             </div>
@@ -133,7 +133,7 @@ function Caixa() {
           <form className="flex flex-1 flex-col justify-between gap-6"
             onSubmit={(e) => {
               e.preventDefault();
-              if (Object.values(vals).some((v) => parseBRL(v) === null)) return toast.error("Preencha os três valores (zero é permitido).");
+              if (Object.values(vals).some((v) => parseBRL(v) === null)) return void toast.error("Preencha os três valores (zero é permitido).");
               setEtapa("revisar");
             }}>
             <div className="space-y-6">

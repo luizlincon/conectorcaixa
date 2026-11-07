@@ -103,7 +103,7 @@ function Detalhe() {
 
       <div className="grid grid-cols-2 gap-3">
         {ultFotos.map((ft) => (
-          <button key={ft.id} onClick={() => setAmpliada(urls[ft.id])} className="overflow-hidden rounded-xl border bg-card text-left">
+          <button key={ft.id} onClick={() => setAmpliada(urls[ft.id] ?? null)} className="overflow-hidden rounded-xl border bg-card text-left">
             {urls[ft.id] && <img src={urls[ft.id]} alt={ft.tipo} className="aspect-[3/4] w-full object-cover" />}
             <p className="px-3 py-2 text-xs text-muted-foreground">{ft.tipo === "hubbarber" ? "HubBarber" : "PagBank"} · capturada {ft.capturada_em ? dataHoraSP(ft.capturada_em) : "—"}</p>
           </button>
@@ -184,7 +184,7 @@ function AlertaItem({ a, nome, onFeito }: { a: { id: string; nivel: string; mens
   const [obs, setObs] = useState("");
   const resolver = async () => {
     const { error } = await supabase.from("alertas").update({ resolvido: true, observacao: obs || null, resolvido_por_nome: nome, resolvido_em: new Date().toISOString() }).eq("id", a.id);
-    if (error) return toast.error("Erro ao resolver");
+    if (error) return void toast.error("Erro ao resolver");
     toast.success("Alerta resolvido");
     onFeito();
   };

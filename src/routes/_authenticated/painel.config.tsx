@@ -37,7 +37,7 @@ function Parametros() {
   useEffect(() => { if (u) { setHora(u.horario_limite.slice(0, 5)); setInicio(u.data_inicio_assinatura); } }, [u]);
   const salvar = async () => {
     const { error } = await supabase.from("unidades").update({ horario_limite: hora, data_inicio_assinatura: inicio }).eq("id", u!.id);
-    if (error) return toast.error("Erro ao salvar");
+    if (error) return void toast.error("Erro ao salvar");
     toast.success("Parâmetros salvos");
     qc.invalidateQueries({ queryKey: ["unidade"] });
   };
@@ -67,7 +67,7 @@ function Usuarios() {
 
   const adicionar = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!pinValido(novo.pin)) return toast.error("PIN deve ter 4 dígitos");
+    if (!pinValido(novo.pin)) return void toast.error("PIN deve ter 4 dígitos");
     setSalvando(true);
     try {
       await criarUsuario({ data: novo });
@@ -123,7 +123,7 @@ function Feriados() {
   const add = async (e: React.FormEvent) => {
     e.preventDefault();
     const { error } = await supabase.from("feriados").insert({ data, descricao: desc });
-    if (error) return toast.error(error.code === "23505" ? "Feriado já cadastrado" : "Erro");
+    if (error) return void toast.error(error.code === "23505" ? "Feriado já cadastrado" : "Erro");
     await recalcularDia(data);
     setData(""); setDesc("");
     qc.invalidateQueries({ queryKey: ["feriados"] });

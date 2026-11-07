@@ -29,7 +29,7 @@ function Config() {
 
   const salvar = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!pinValido(pin)) return toast.error("O PIN deve ter 4 dígitos.");
+    if (!pinValido(pin)) return void toast.error("O PIN deve ter 4 dígitos.");
     setSalvando(true);
     try {
       await criarPrimeiroDono({ data: { nome, telefone: tel, pin } });

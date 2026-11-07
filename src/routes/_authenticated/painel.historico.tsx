@@ -10,7 +10,7 @@ export const Route = createFileRoute("/_authenticated/painel/historico")({ compo
 type Agrup = "dia" | "semana" | "mes";
 
 function inicioSemana(d: string) {
-  const [y, m, dd] = d.split("-").map(Number);
+  const [y = 0, m = 1, dd = 1] = d.split("-").map(Number);
   const dt = new Date(Date.UTC(y, m - 1, dd));
   const dow = (dt.getUTCDay() + 6) % 7; // segunda = 0
   dt.setUTCDate(dt.getUTCDate() - dow);
@@ -20,7 +20,7 @@ function inicioSemana(d: string) {
 function Historico() {
   const hoje = hojeSP();
   const [agrup, setAgrup] = useState<Agrup>("dia");
-  const de = (() => { const [y, m] = hoje.split("-").map(Number); const d = new Date(Date.UTC(y, m - 12, 1)); return d.toISOString().slice(0, 10); })();
+  const de = (() => { const [y = 0, m = 1] = hoje.split("-").map(Number); const d = new Date(Date.UTC(y, m - 12, 1)); return d.toISOString().slice(0, 10); })();
   const { data } = useQuery(fechamentosPeriodoQuery(de, hoje));
   const enviados = (data?.fechamentos ?? []).filter((f) => f.status === "enviado");
 

@@ -49,12 +49,12 @@ function Login() {
 
   const entrar = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!pinValido(pin)) return toast.error("O PIN tem 4 dígitos.");
+    if (!pinValido(pin)) return void toast.error("O PIN tem 4 dígitos.");
     setCarregando(true);
     const { error } = await supabase.auth.signInWithPassword({ email: emailDoTelefone(tel), password: senhaDoPin(pin) });
     if (error) {
       setCarregando(false);
-      return toast.error("Telefone ou PIN incorretos.");
+      return void toast.error("Telefone ou PIN incorretos.");
     }
     qc.removeQueries({ queryKey: ["sessao"] });
     await irPara();

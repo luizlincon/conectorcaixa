@@ -74,7 +74,7 @@ const brl = (cent: number) =>
 
 /** 0 = domingo ... 6 = sábado, calculado sobre a data civil (sem fuso). */
 export function diaSemana(data: string): number {
-  const [y, m, d] = data.split("-").map(Number);
+  const [y = 0, m = 1, d = 1] = data.split("-").map(Number);
   return new Date(Date.UTC(y, m - 1, d)).getUTCDay();
 }
 
