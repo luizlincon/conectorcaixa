@@ -53,7 +53,7 @@ function Config() {
       </div>
       <form onSubmit={salvar} className="space-y-4">
         <div className="space-y-2"><Label>Nome</Label><Input value={nome} onChange={(e) => setNome(e.target.value)} className="h-12" /></div>
-        <div className="space-y-2"><Label>Telefone</Label><Input inputMode="tel" value={tel} onChange={(e) => setTel(formatarTelefone(e.target.value))} className="h-12" /></div>
+        <div className="space-y-2"><Label>Telefone</Label><Input type="tel" inputMode="tel" maxLength={16} value={tel} onChange={(e) => setTel(formatarTelefone(e.target.value))} className="h-12" /></div>
         <div className="space-y-2"><Label>PIN (4 dígitos)</Label><Input type="password" inputMode="numeric" maxLength={4} value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))} className="h-12 tracking-[0.5em]" /></div>
         <Button type="submit" size="lg" className="h-12 w-full" disabled={salvando}>{salvando ? "Salvando…" : "Cadastrar dono"}</Button>
       </form>
