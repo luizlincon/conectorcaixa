@@ -97,6 +97,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:image", content: `${SITE}/og-image.png` },
       { name: "author", content: "Navalha da Corte" },
+      // Sistema interno: fora dos buscadores.
+      { name: "robots", content: "noindex, nofollow" },
       { name: "apple-mobile-web-app-title", content: "Navalha da Corte" },
       { name: "theme-color", content: "#f6efe3" },
     ],

@@ -1,11 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Marca } from "@/components/Marca";
-import { criarPrimeiroDono } from "@/lib/caixa.functions";
+import { criarPrimeiroDono, existeDono } from "@/lib/caixa.functions";
 import { formatarTelefone, pinValido } from "@/lib/auth-utils";
 
 export const Route = createFileRoute("/configuracao-inicial")({
@@ -28,6 +28,11 @@ function Config() {
   const [tel, setTel] = useState("");
   const [pin, setPin] = useState("");
   const [salvando, setSalvando] = useState(false);
+
+  // Só serve no primeiro acesso: com o dono já cadastrado, volta para o login.
+  useEffect(() => {
+    existeDono().then((r) => { if (r.existe) navigate({ to: "/", replace: true }); }).catch(() => {});
+  }, [navigate]);
 
   const salvar = async (e: React.FormEvent) => {
     e.preventDefault();

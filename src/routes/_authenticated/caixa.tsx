@@ -112,7 +112,7 @@ export function Caixa({ unidade }: { unidade: UnidadePublica }) {
 
   if (sessao && !podeOperarCaixa(sessao.papel)) return (
     <main className="mx-auto min-h-screen max-w-md space-y-8 px-5 py-6">
-      <header className="flex items-center justify-between"><Marca subtitulo={`Unidade ${unidade.nome}`} /><Button variant="ghost" size="icon" onClick={sair} aria-label="Sair"><LogOut /></Button></header>
+      <header className="flex items-center justify-between"><Marca subtitulo={`Unidade ${unidade.nome}`} /><Button variant="ghost" size="icon" onClick={() => sair(`/${unidade.codigo}`)} aria-label="Sair"><LogOut /></Button></header>
       <h1 className="text-2xl font-bold">Acesso restrito</h1>
       <p className="text-muted-foreground">Seu usuário não tem permissão para operar o caixa.</p>
     </main>
@@ -128,7 +128,7 @@ export function Caixa({ unidade }: { unidade: UnidadePublica }) {
         )}
         {etapa === "inicio" && (podeVerMeses(sessao?.papel)
           ? <Button variant="ghost" size="icon" asChild><Link to="/painel" aria-label="Voltar ao painel"><ChevronLeft /></Link></Button>
-          : <Button variant="ghost" size="icon" onClick={sair} aria-label="Sair"><LogOut /></Button>)}
+          : <Button variant="ghost" size="icon" onClick={() => sair(`/${unidade.codigo}`)} aria-label="Sair"><LogOut /></Button>)}
         {etapa !== "inicio" && <span className="text-sm text-muted-foreground">Passo {passo} de 4</span>}
       </header>
       {etapa !== "inicio" && (

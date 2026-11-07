@@ -70,7 +70,10 @@ function Parametros() {
   const { unidade: u } = useUnidadeAtual();
   const [form, setForm] = useState<Form | null>(null);
   const [salvando, setSalvando] = useState(false);
-  useEffect(() => { if (u) setForm(paraForm(u)); }, [u]);
+  // Recarrega o formulário só ao trocar de unidade, para não apagar o que o dono está digitando
+  // quando os dados são atualizados em segundo plano (ex.: ao voltar para a aba).
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { if (u) setForm(paraForm(u)); }, [u?.id]);
   if (!u || !form) return null;
   const link = typeof window === "undefined" ? `/${u.codigo}` : `${window.location.origin}/${u.codigo}`;
 

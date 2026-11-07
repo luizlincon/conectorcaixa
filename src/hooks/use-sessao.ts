@@ -35,7 +35,8 @@ export const sessaoQuery = queryOptions({
 
 export const useSessao = () => useQuery(sessaoQuery);
 
-export async function sair() {
+/** Sai da conta e volta para `destino` (o barbeiro volta para o login da unidade dele). */
+export async function sair(destino?: unknown) {
   await supabase.auth.signOut();
-  window.location.href = "/";
+  window.location.href = typeof destino === "string" && destino.startsWith("/") ? destino : "/";
 }
