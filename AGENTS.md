@@ -36,3 +36,4 @@ use the editor.
 - Photo reading uses the Lovable AI Gateway (Anthropic Claude, messages surface) inside server functions; no Edge Functions.
 - Rule 11 ("não enviado") is derived at display time from `unidades.horario_limite`, not stored as an alert.
 - Cash-operation authorization is validated through `has_role()` before privileged writes; current-day/unit restrictions are enforced on photo paths and RLS, and separate UI helpers govern operation versus history access so those permissions never become coupled.
+- Employee INSERT policies on cash closings and photo records must deny direct writes; authenticated server submissions use the admin client after role validation, while employee current-day SELECT and browser storage upload remain enabled to prevent bypassing AI checks.
