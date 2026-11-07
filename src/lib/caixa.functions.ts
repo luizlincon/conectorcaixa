@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { emailDoTelefone, senhaDoPin, soDigitos } from "./auth-utils";
 import { hojeSP } from "./formato";
+import { podeOperarCaixa } from "./permissoes";
 
 const pin = z.string().regex(/^\d{4}$/, "PIN deve ter 4 dígitos");
 const telefone = z.string().transform(soDigitos).refine((t) => t.length >= 10 && t.length <= 11, "Telefone inválido");
@@ -13,7 +14,7 @@ async function admin() {
 
 async function exigirDono(ctx: { supabase: any; userId: string }) {
   const { data } = await ctx.supabase.rpc("has_role", { _user_id: ctx.userId, _role: "dono" });
-  if (!data) throw new Error("Apenas o dono pode fazer isso.");
+  if (!podeOperarCaixa(data ? "dono" : null)) throw new Error("Apenas o dono pode fazer isso.");
   const { data: u } = await ctx.supabase.from("usuarios").select("nome").eq("id", ctx.userId).single();
   return (u?.nome as string) ?? "Dono";
 }
@@ -57,7 +58,7 @@ async function criarConta(
   }
 }
 
-/* ---------- Funcionário ---------- */
+/* ---------- Fechamento exclusivo do dono ---------- */
 
 const fotoSchema = z.object({
   tipo: z.enum(["hubbarber", "pagbank"]),
@@ -76,6 +77,7 @@ export const enviarFechamento = createServerFn({ method: "POST" })
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
+    await exigirDono(context);
     const a = await admin();
     const { data: u } = await a.from("usuarios").select("nome, unidade_id, ativo").eq("id", context.userId).single();
     if (!u?.ativo || !u.unidade_id) throw new Error("Usuário sem unidade ativa.");

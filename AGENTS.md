@@ -35,3 +35,4 @@ use the editor.
 - Roles live in `user_roles` + `has_role()`; never store role on `usuarios`.
 - Photo reading uses the Lovable AI Gateway (Anthropic Claude, messages surface) inside server functions; no Edge Functions.
 - Rule 11 ("não enviado") is derived at display time from `unidades.horario_limite`, not stored as an alert.
+- Cash-operation authorization is validated through `has_role()` before server writes and enforced by RLS; UI capability helpers mirror that boundary for navigation.
