@@ -14,16 +14,284 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      alertas: {
+        Row: {
+          created_at: string
+          data: string
+          fechamento_id: string
+          id: string
+          mensagem: string
+          nivel: string
+          observacao: string | null
+          regra: number
+          resolvido: boolean
+          resolvido_em: string | null
+          resolvido_por_nome: string | null
+          unidade_id: string
+        }
+        Insert: {
+          created_at?: string
+          data: string
+          fechamento_id: string
+          id?: string
+          mensagem: string
+          nivel: string
+          observacao?: string | null
+          regra: number
+          resolvido?: boolean
+          resolvido_em?: string | null
+          resolvido_por_nome?: string | null
+          unidade_id: string
+        }
+        Update: {
+          created_at?: string
+          data?: string
+          fechamento_id?: string
+          id?: string
+          mensagem?: string
+          nivel?: string
+          observacao?: string | null
+          regra?: number
+          resolvido?: boolean
+          resolvido_em?: string | null
+          resolvido_por_nome?: string | null
+          unidade_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alertas_fechamento_id_fkey"
+            columns: ["fechamento_id"]
+            isOneToOne: false
+            referencedRelation: "fechamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "alertas_unidade_id_fkey"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "unidades"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fechamentos: {
+        Row: {
+          corrigido_em: string | null
+          corrigido_por_nome: string | null
+          created_at: string
+          data: string
+          enviado_em: string | null
+          enviado_por: string | null
+          enviado_por_nome: string | null
+          id: string
+          leitura_erro: string | null
+          leitura_hub: Json | null
+          leitura_pag: Json | null
+          leitura_status: string
+          status: string
+          unidade_id: string
+          valor_assinatura: number
+          valor_dinheiro: number
+          valor_maquina: number
+          versoes: Json
+        }
+        Insert: {
+          corrigido_em?: string | null
+          corrigido_por_nome?: string | null
+          created_at?: string
+          data: string
+          enviado_em?: string | null
+          enviado_por?: string | null
+          enviado_por_nome?: string | null
+          id?: string
+          leitura_erro?: string | null
+          leitura_hub?: Json | null
+          leitura_pag?: Json | null
+          leitura_status?: string
+          status?: string
+          unidade_id: string
+          valor_assinatura: number
+          valor_dinheiro: number
+          valor_maquina: number
+          versoes?: Json
+        }
+        Update: {
+          corrigido_em?: string | null
+          corrigido_por_nome?: string | null
+          created_at?: string
+          data?: string
+          enviado_em?: string | null
+          enviado_por?: string | null
+          enviado_por_nome?: string | null
+          id?: string
+          leitura_erro?: string | null
+          leitura_hub?: Json | null
+          leitura_pag?: Json | null
+          leitura_status?: string
+          status?: string
+          unidade_id?: string
+          valor_assinatura?: number
+          valor_dinheiro?: number
+          valor_maquina?: number
+          versoes?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fechamentos_unidade_id_fkey"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "unidades"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feriados: {
+        Row: {
+          data: string
+          descricao: string
+          id: string
+        }
+        Insert: {
+          data: string
+          descricao?: string
+          id?: string
+        }
+        Update: {
+          data?: string
+          descricao?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      fotos: {
+        Row: {
+          capturada_em: string | null
+          created_at: string
+          fechamento_id: string
+          id: string
+          path: string
+          tipo: string
+        }
+        Insert: {
+          capturada_em?: string | null
+          created_at?: string
+          fechamento_id: string
+          id?: string
+          path: string
+          tipo: string
+        }
+        Update: {
+          capturada_em?: string | null
+          created_at?: string
+          fechamento_id?: string
+          id?: string
+          path?: string
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fotos_fechamento_id_fkey"
+            columns: ["fechamento_id"]
+            isOneToOne: false
+            referencedRelation: "fechamentos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      unidades: {
+        Row: {
+          created_at: string
+          data_inicio_assinatura: string
+          horario_limite: string
+          id: string
+          nome: string
+        }
+        Insert: {
+          created_at?: string
+          data_inicio_assinatura?: string
+          horario_limite?: string
+          id?: string
+          nome: string
+        }
+        Update: {
+          created_at?: string
+          data_inicio_assinatura?: string
+          horario_limite?: string
+          id?: string
+          nome?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      usuarios: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          id: string
+          nome: string
+          telefone: string
+          unidade_id: string | null
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          id: string
+          nome: string
+          telefone: string
+          unidade_id?: string | null
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          nome?: string
+          telefone?: string
+          unidade_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "usuarios_unidade_id_fkey"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "unidades"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      hoje_sp: { Args: never; Returns: string }
+      minha_unidade: { Args: never; Returns: string }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "dono" | "funcionario"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +418,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["dono", "funcionario"],
+    },
   },
 } as const
