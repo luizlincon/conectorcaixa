@@ -73,9 +73,10 @@ describe("regras", () => {
     expect(r.alertas.some((a) => a.regra === 2 && a.nivel === "vermelho")).toBe(true);
     expect(r.status).toBe("vermelho");
   });
-  it("foto do HubBarber sem data de fechamento é amarelo", () => {
-    const r = avaliar({ ...aceite, hub: { ...aceite.hub!, fechamento: null } });
-    expect(r.alertas.some((a) => a.regra === 2 && a.nivel === "amarelo")).toBe(true);
+  it("foto do HubBarber sem data (quadro 'Entradas por forma') não gera alerta", () => {
+    const r = avaliar({ ...aceite, hub: { ...aceite.hub!, abertura: null, fechamento: null } });
+    expect(r.alertas.find((a) => a.regra === 2)).toBeUndefined();
+    expect(r.status).toBe("verde");
   });
   it("não enviado após horário limite em dia útil", () => {
     const base = { data: "2026-11-04", hoje: "2026-11-04", horarioLimite: "20:00", feriados: [], enviado: false, niveisAbertos: [] };

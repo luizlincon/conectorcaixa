@@ -16,8 +16,8 @@ export const TITULO_ERRO: Record<TipoFoto, string> = {
 
 export const DICA: Record<ProblemaFoto, { motivo: string; dica: string }> = {
   nao_e_a_tela: {
-    motivo: "Não encontramos os números do caixa nesta foto.",
-    dica: "Confira se é a tela certa e fotografe de frente, com os valores aparecendo.",
+    motivo: "Não encontramos o quadro \"Entradas por forma\" nesta foto.",
+    dica: "Abra o caixa no HubBarber e fotografe de frente o quadro \"Entradas por forma\", com todos os valores.",
   },
   longe: {
     motivo: "Os números ficaram pequenos demais para ler.",
@@ -25,7 +25,7 @@ export const DICA: Record<ProblemaFoto, { motivo: string; dica: string }> = {
   },
   cortada: {
     motivo: "Parte dos valores ficou fora da foto.",
-    dica: "Afaste um pouco e enquadre a tela inteira, de ponta a ponta.",
+    dica: "Afaste um pouco e enquadre o quadro \"Entradas por forma\" inteiro, de cima a baixo.",
   },
   reflexo: {
     motivo: "Tem reflexo ou brilho cobrindo os números.",

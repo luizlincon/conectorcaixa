@@ -140,7 +140,7 @@ function Caixa() {
         )}
 
         {etapa === "hub" && (
-          <EtapaFoto tipo="hubbarber" titulo="Foto do HubBarber" dica="Fotografe a tela de fechamento de caixa inteira, com os valores legíveis."
+          <EtapaFoto tipo="hubbarber" titulo="Foto do HubBarber" dica={'Fotografe o quadro "Entradas por forma" do caixa, com todos os valores legíveis.'}
             foto={hub} setFoto={setHub} onUsar={() => setEtapa("pag")} />
         )}
         {etapa === "pag" && (
@@ -251,8 +251,10 @@ export function EtapaFoto({ tipo, titulo, dica, foto, setFoto, onUsar }: {
     setProcessando(true);
     try {
       const blob = await comprimirFoto(file);
-      setFoto({ blob, preview: URL.createObjectURL(blob), capturadaEm, checagem: "conferindo" });
-      void conferir(blob, id);
+      // Só a foto do HubBarber passa pela checagem; a da PagBank segue direto.
+      const confere = tipo === "hubbarber";
+      setFoto({ blob, preview: URL.createObjectURL(blob), capturadaEm, ...(confere ? { checagem: "conferindo" as const } : {}) });
+      if (confere) void conferir(blob, id);
     } catch {
       toast.error("Não foi possível processar a foto. Tente de novo.");
     } finally {

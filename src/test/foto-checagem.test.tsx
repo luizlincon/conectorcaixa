@@ -70,11 +70,13 @@ describe("captura da foto do caixa", () => {
     expect(onUsar).toHaveBeenCalledTimes(1);
   });
 
-  it("PagBank usa o título do resumo de vendas", async () => {
-    mocks.conferirFoto.mockResolvedValue({ ok: false, problema: "desfocada" });
+  it("PagBank não passa pela checagem: foto vai direto", async () => {
     const { container } = render(<Tela tipo="pagbank" onUsar={vi.fn()} />);
     tirarFoto(container);
-    expect(await screen.findByRole("dialog")).toHaveTextContent("Não localizamos o resumo de vendas");
+    expect(await screen.findByRole("button", { name: /Usar foto/ })).toBeEnabled();
+    expect(mocks.conferirFoto).not.toHaveBeenCalled();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.queryByText(/Conferindo/)).not.toBeInTheDocument();
   });
 
   it("foto boa: confirma e não abre aviso", async () => {
