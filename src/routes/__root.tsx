@@ -16,6 +16,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
 import { installModuleRecovery, recoverModuleLoad } from "@/lib/module-recovery";
 
+/** Endereço público do site (usado na imagem de compartilhamento). Troque aqui se ligar um domínio próprio. */
+const SITE = "https://conectorcaixa.lovable.app";
+
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -87,7 +90,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:title", content: "Conferente de Caixa · Navalha da Corte" },
       { property: "og:description", content: "Fechamento e conferência de caixa da barbearia Navalha da Corte." },
       { property: "og:type", content: "website" },
+      { property: "og:site_name", content: "Navalha da Corte" },
+      { property: "og:image", content: `${SITE}/og-image.png` },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:image", content: `${SITE}/og-image.png` },
+      { name: "author", content: "Navalha da Corte" },
+      { name: "apple-mobile-web-app-title", content: "Navalha da Corte" },
       { name: "theme-color", content: "#f6efe3" },
     ],
     links: [
@@ -101,7 +111,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: appCss,
       },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "icon", href: "/favicon.ico", sizes: "any" },
+      { rel: "icon", href: "/icon-512.png", type: "image/png", sizes: "512x512" },
+      { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
     ],
   }),
   shellComponent: RootShell,
