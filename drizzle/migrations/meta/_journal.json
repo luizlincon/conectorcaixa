@@ -15,6 +15,13 @@
       "when": 1794028245875,
       "tag": "0001_caixa_operacoes_exclusivas_dono",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794028861961,
+      "tag": "0002_funcionario_caixa_atual",
+      "breakpoints": true
     }
   ]
 }
