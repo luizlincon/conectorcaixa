@@ -22,6 +22,13 @@
       "when": 1794028861961,
       "tag": "0002_funcionario_caixa_atual",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1794029802028,
+      "tag": "0003_bloquear_insercoes_diretas_funcionario_caixa",
+      "breakpoints": true
     }
   ]
 }
