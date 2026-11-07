@@ -110,7 +110,7 @@ function Usuarios() {
       </ul>
       <form onSubmit={adicionar} className="grid gap-2 border-t pt-3 sm:grid-cols-2">
         <Input placeholder="Nome" value={novo.nome} onChange={(e) => setNovo({ ...novo, nome: e.target.value })} required />
-        <Input placeholder="Telefone" type="tel" inputMode="tel" maxLength={16} value={novo.telefone} onChange={(e) => setNovo({ ...novo, telefone: formatarTelefone(e.target.value) })} required />
+        <Input placeholder="Telefone" type="tel" inputMode="tel" maxLength={20} value={novo.telefone} onChange={(e) => setNovo({ ...novo, telefone: formatarTelefone(e.target.value) })} required />
         <Input placeholder="PIN (4 dígitos)" inputMode="numeric" maxLength={4} value={novo.pin} onChange={(e) => setNovo({ ...novo, pin: e.target.value.replace(/\D/g, "") })} required />
         <select className="h-9 rounded-md border border-input bg-card px-3 text-sm" value={novo.papel} onChange={(e) => setNovo({ ...novo, papel: e.target.value as "funcionario" | "dono" })}>
           <option value="funcionario">Funcionário</option><option value="dono">Dono</option>

@@ -55,9 +55,10 @@ function Caixa() {
   const bloqueado = fechamento && fechamento.status !== "reaberto";
 
   const enviar = async () => {
-    if (!podeOperarCaixa(sessao?.papel) || !sessao?.unidadeId || !hub || !pag) return;
+    if (!podeOperarCaixa(sessao?.papel) || !sessao?.unidadeId) return void toast.error("Seu usuário está sem unidade. Fale com o dono.");
+    if (!hub || !pag) return void toast.error("Tire as duas fotos antes de enviar.");
     const maquina = parseBRL(vals.maquina), assinatura = parseBRL(vals.assinatura), dinheiro = parseBRL(vals.dinheiro);
-    if (maquina === null || assinatura === null || dinheiro === null) return;
+    if (maquina === null || assinatura === null || dinheiro === null) return void toast.error("Preencha os três valores (zero é permitido).");
     setEnviando(true);
     try {
       const fotos = [];

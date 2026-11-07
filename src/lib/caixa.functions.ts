@@ -1,12 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { emailDoTelefone, senhaDoPin, soDigitos } from "./auth-utils";
+import { emailDoTelefone, normalizarTelefone, senhaDoPin } from "./auth-utils";
 import { hojeSP } from "./formato";
 import { podeAcessarDia, podeOperarCaixa } from "./permissoes";
 
 const pin = z.string().regex(/^\d{4}$/, "PIN deve ter 4 dígitos");
-const telefone = z.string().transform(soDigitos).refine((t) => t.length >= 10 && t.length <= 11, "Telefone inválido");
+const telefone = z.string().transform(normalizarTelefone).refine((t) => t.length >= 10 && t.length <= 11, "Telefone inválido");
 
 async function admin() {
   return (await import("@/integrations/supabase/client.server")).supabaseAdmin;
@@ -73,7 +73,10 @@ export const enviarFechamento = createServerFn({ method: "POST" })
       maquina: z.number().min(0),
       assinatura: z.number().min(0),
       dinheiro: z.number().min(0),
-      fotos: z.array(fotoSchema).length(2),
+      fotos: z.array(fotoSchema).length(2).refine(
+        (fs) => fs.some((f) => f.tipo === "hubbarber") && fs.some((f) => f.tipo === "pagbank"),
+        "Envie uma foto do HubBarber e uma da PagBank.",
+      ),
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
@@ -87,8 +90,9 @@ export const enviarFechamento = createServerFn({ method: "POST" })
     if (!u?.ativo || !u.unidade_id) throw new Error("Usuário sem unidade ativa.");
     const hoje = hojeSP();
     for (const f of data.fotos) {
-      const [unidadeFoto, diaFoto] = f.path.split("/");
-      if (unidadeFoto !== u.unidade_id || diaFoto !== hoje || !podeAcessarDia(papel, diaFoto, hoje)) {
+      const [unidadeFoto, diaFoto, arquivo = "", ...resto] = f.path.split("/");
+      const nomeValido = resto.length === 0 && new RegExp(`^${f.tipo}-\\d+\\.jpg$`).test(arquivo);
+      if (unidadeFoto !== u.unidade_id || diaFoto !== hoje || !nomeValido || !podeAcessarDia(papel, diaFoto, hoje)) {
         throw new Error("Use fotos do caixa de hoje da sua unidade.");
       }
     }
@@ -114,13 +118,19 @@ export const enviarFechamento = createServerFn({ method: "POST" })
     let id: string;
     if (existente) {
       id = existente.id;
-      await a.from("fechamentos").update(valores).eq("id", id);
+      const { error } = await a.from("fechamentos").update(valores).eq("id", id);
+      if (error) throw new Error("Não foi possível salvar o fechamento.");
     } else {
       const { data: novo, error } = await a.from("fechamentos").insert({ ...valores, unidade_id: u.unidade_id, data: hoje }).select("id").single();
       if (error || !novo) throw new Error("Não foi possível salvar o fechamento.");
       id = novo.id;
     }
-    await a.from("fotos").insert(data.fotos.map((f) => ({ ...f, fechamento_id: id })));
+    const { error: erroFotos } = await a.from("fotos").insert(data.fotos.map((f) => ({ ...f, fechamento_id: id })));
+    if (erroFotos) {
+      // Sem as fotos o fechamento não pode ser conferido: volta para "reaberto" para o envio ser refeito.
+      await a.from("fechamentos").update({ status: "reaberto", leitura_status: "erro", leitura_erro: "Falha ao salvar as fotos" }).eq("id", id);
+      throw new Error("Não foi possível salvar as fotos. Tente enviar de novo.");
+    }
 
     const { lerFotos, gerarAlertas } = await import("./processamento.server");
     await lerFotos(a, id);

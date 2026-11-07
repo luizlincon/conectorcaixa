@@ -73,7 +73,7 @@ function Login() {
         </div>
         <div className="space-y-2">
           <Label htmlFor="tel">Telefone</Label>
-          <Input id="tel" type="tel" inputMode="tel" autoComplete="tel" maxLength={16} placeholder="(61) 90000-0000" value={tel}
+          <Input id="tel" type="tel" inputMode="tel" autoComplete="tel" maxLength={20} placeholder="(61) 90000-0000" value={tel}
             onChange={(e) => setTel(formatarTelefone(e.target.value))} className="h-14 text-lg" />
         </div>
         <div className="space-y-2">

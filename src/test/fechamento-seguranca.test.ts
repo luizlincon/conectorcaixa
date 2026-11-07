@@ -52,7 +52,7 @@ describe("Segurança do fechamento", () => {
         from: userFrom,
       },
     };
-    const fotos = ["hubbarber", "pagbank"].map((tipo) => ({ tipo, path: `unidade/${hojeSP()}/${tipo}.jpg`, capturada_em: new Date().toISOString() }));
+    const fotos = ["hubbarber", "pagbank"].map((tipo) => ({ tipo, path: `unidade/${hojeSP()}/${tipo}-1730000000000.jpg`, capturada_em: new Date().toISOString() }));
     const handler = enviarFechamento as unknown as (args: { data: unknown; context: typeof context }) => Promise<{ ok: boolean }>;
     expect(await handler({ data: { maquina: 445, assinatura: 35.04, dinheiro: 95, fotos }, context })).toMatchObject({ ok: true });
     expect(fechamentoInsert).toHaveBeenCalledWith(expect.objectContaining({ enviado_por: "funcionario", data: hojeSP(), leitura_status: "pendente" }));

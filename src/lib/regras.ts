@@ -106,9 +106,11 @@ export function avaliar(e: EntradaRegras): ResultadoRegras {
   if (dow === 0 || dow === 6) add(1, "amarelo", "Lançamento em fim de semana (unidade funciona de segunda a sexta).");
   else if (e.feriados.includes(e.data)) add(1, "amarelo", "Lançamento em feriado.");
 
-  // 2. Abrir e fechar no mesmo dia
+  // 2. Abrir e fechar no mesmo dia — e a foto tem que ser do fechamento deste dia
   const dAb = hub?.abertura?.slice(0, 10);
   const dFe = hub?.fechamento?.slice(0, 10);
+  if (hub && !dFe) add(2, "amarelo", "A foto do HubBarber não mostra a data de fechamento — o caixa pode não ter sido fechado.");
+  else if (dFe && dFe !== e.data) add(2, "vermelho", `A foto do HubBarber é do fechamento de ${fmtData(dFe)}, não de ${fmtData(e.data)}.`);
   if (dAb && dFe && dFe > dAb) add(2, "amarelo", `Caixa aberto em ${fmtData(dAb)} e fechado em ${fmtData(dFe)}.`);
 
   // 3. Máquina

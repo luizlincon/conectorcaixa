@@ -26,10 +26,19 @@ export const dataBR = (d: string) => {
 export const DIAS = ["domingo", "segunda", "terça", "quarta", "quinta", "sexta", "sábado"];
 export const MESES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
 
-/** Converte "1.234,56" / "1234.56" em número. */
+/**
+ * Converte "1.234,56" / "150,00" / "150.00" / "1.234" em número.
+ * Sem vírgula, um único ponto seguido de 1 ou 2 dígitos é decimal (teclado de celular só com ponto);
+ * nos outros casos o ponto é separador de milhar.
+ */
 export function parseBRL(s: string): number | null {
   const t = s.trim();
-  if (!t) return null;
-  const n = Number(t.replace(/\./g, "").replace(",", "."));
+  if (!/\d/.test(t)) return null;
+  const normal = t.includes(",")
+    ? t.replace(/\./g, "").replace(",", ".")
+    : /^\d*\.\d{1,2}$/.test(t)
+      ? t
+      : t.replace(/\./g, "");
+  const n = Number(normal);
   return Number.isFinite(n) && n >= 0 ? Math.round(n * 100) / 100 : null;
 }

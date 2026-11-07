@@ -6,7 +6,13 @@ const aceite: EntradaRegras = {
   maquina: 445,
   assinatura: 35.04,
   dinheiro: 95,
-  hub: { entradas: { dinheiro: 95, credito: 155, debito: 235, pix: 55, outro: 35.04 }, saidas: [], lancamentos: [] },
+  hub: {
+    abertura: "2026-11-04T08:00",
+    fechamento: "2026-11-04T19:30",
+    entradas: { dinheiro: 95, credito: 155, debito: 235, pix: 55, outro: 35.04 },
+    saidas: [],
+    lancamentos: [],
+  },
   pag: { total_vendido: 445, quantidade_vendas: 6 },
   feriados: [],
   dataInicioAssinatura: "2026-11-09",
@@ -61,6 +67,15 @@ describe("regras", () => {
   it("saída em dinheiro maior que entrada é vermelho", () => {
     const r = avaliar({ ...aceite, hub: { ...aceite.hub!, saidas: [{ forma: "Dinheiro", descricao: "x", valor: 100 }] } });
     expect(r.alertas.some((a) => a.regra === 10 && a.nivel === "vermelho")).toBe(true);
+  });
+  it("foto do HubBarber de outro dia é vermelho", () => {
+    const r = avaliar({ ...aceite, hub: { ...aceite.hub!, abertura: "2026-11-03T08:00", fechamento: "2026-11-03T19:30" } });
+    expect(r.alertas.some((a) => a.regra === 2 && a.nivel === "vermelho")).toBe(true);
+    expect(r.status).toBe("vermelho");
+  });
+  it("foto do HubBarber sem data de fechamento é amarelo", () => {
+    const r = avaliar({ ...aceite, hub: { ...aceite.hub!, fechamento: null } });
+    expect(r.alertas.some((a) => a.regra === 2 && a.nivel === "amarelo")).toBe(true);
   });
   it("não enviado após horário limite em dia útil", () => {
     const base = { data: "2026-11-04", hoje: "2026-11-04", horarioLimite: "20:00", feriados: [], enviado: false, niveisAbertos: [] };
