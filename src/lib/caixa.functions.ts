@@ -60,6 +60,31 @@ async function criarConta(
 
 /* ---------- Fechamento do dia: dono e funcionário ---------- */
 
+async function papelNoCaixa(ctx: { supabase: any; userId: string }) {
+  const [{ data: dono }, { data: funcionario }] = await Promise.all([
+    ctx.supabase.rpc("has_role", { _user_id: ctx.userId, _role: "dono" }),
+    ctx.supabase.rpc("has_role", { _user_id: ctx.userId, _role: "funcionario" }),
+  ]);
+  const papel = dono ? "dono" : funcionario ? "funcionario" : null;
+  if (!podeOperarCaixa(papel)) throw new Error("Sem permissão para fechar o caixa.");
+  return papel;
+}
+
+/** Checagem rápida da foto logo após a captura: diz se dá para ler o fechamento e, se não, o motivo. */
+export const conferirFoto = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z.object({
+      tipo: z.enum(["hubbarber", "pagbank"]),
+      imagem: z.string().min(100).max(8_000_000).regex(/^[A-Za-z0-9+/=]+$/, "Imagem inválida"),
+    }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    await papelNoCaixa(context);
+    const { checarFoto } = await import("./leitura.server");
+    return checarFoto(data.imagem, data.tipo);
+  });
+
 const fotoSchema = z.object({
   tipo: z.enum(["hubbarber", "pagbank"]),
   path: z.string().min(5),
@@ -80,12 +105,7 @@ export const enviarFechamento = createServerFn({ method: "POST" })
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
-    const [{ data: dono }, { data: funcionario }] = await Promise.all([
-      context.supabase.rpc("has_role", { _user_id: context.userId, _role: "dono" }),
-      context.supabase.rpc("has_role", { _user_id: context.userId, _role: "funcionario" }),
-    ]);
-    const papel = dono ? "dono" : funcionario ? "funcionario" : null;
-    if (!podeOperarCaixa(papel)) throw new Error("Sem permissão para fechar o caixa.");
+    const papel = await papelNoCaixa(context);
     const { data: u } = await context.supabase.from("usuarios").select("nome, unidade_id, ativo").eq("id", context.userId).single();
     if (!u?.ativo || !u.unidade_id) throw new Error("Usuário sem unidade ativa.");
     const hoje = hojeSP();

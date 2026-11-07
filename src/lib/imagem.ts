@@ -1,4 +1,4 @@
-/** Comprime no navegador: lado maior 1600 px, JPEG qualidade 0,7. */
+/** Comprime no navegador: lado maior 1600 px (limite que a IA usa), JPEG qualidade 0,85 para os dígitos saírem nítidos. */
 export async function comprimirFoto(file: File): Promise<Blob> {
   const url = URL.createObjectURL(file);
   try {
@@ -16,7 +16,7 @@ export async function comprimirFoto(file: File): Promise<Blob> {
     canvas.height = h;
     canvas.getContext("2d")!.drawImage(img, 0, 0, w, h);
     return await new Promise<Blob>((res, rej) =>
-      canvas.toBlob((b) => (b ? res(b) : rej(new Error("Falha ao comprimir"))), "image/jpeg", 0.7),
+      canvas.toBlob((b) => (b ? res(b) : rej(new Error("Falha ao comprimir"))), "image/jpeg", 0.85),
     );
   } finally {
     URL.revokeObjectURL(url);

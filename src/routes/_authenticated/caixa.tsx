@@ -2,7 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Camera, Check, ChevronLeft, LogOut, RotateCcw } from "lucide-react";
+import { Camera, Check, ChevronLeft, Loader2, LogOut, RotateCcw, XCircle } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DICA, TITULO_ERRO, type ChecagemFoto, type TipoFoto } from "@/lib/checagem-foto";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +13,7 @@ import { sair, useSessao } from "@/hooks/use-sessao";
 import { brl, dataBR, DIAS, hojeSP, horaSP, parseBRL } from "@/lib/formato";
 import { diaSemana } from "@/lib/regras";
 import { comprimirFoto } from "@/lib/imagem";
-import { enviarFechamento } from "@/lib/caixa.functions";
+import { conferirFoto, enviarFechamento } from "@/lib/caixa.functions";
 import { podeOperarCaixa, podeVerMeses } from "@/lib/permissoes";
 
 export const Route = createFileRoute("/_authenticated/caixa")({
@@ -28,7 +30,7 @@ export const Route = createFileRoute("/_authenticated/caixa")({
   component: Caixa,
 });
 
-type Foto = { blob: Blob; preview: string; capturadaEm: string };
+type Foto = { blob: Blob; preview: string; capturadaEm: string; checagem?: ChecagemFoto | "conferindo" | "indisponivel" };
 type Etapa = "inicio" | "hub" | "pag" | "valores" | "revisar";
 
 function Caixa() {
@@ -138,11 +140,11 @@ function Caixa() {
         )}
 
         {etapa === "hub" && (
-          <EtapaFoto titulo="Foto do HubBarber" dica="Fotografe a tela de fechamento de caixa inteira, com os valores legíveis."
+          <EtapaFoto tipo="hubbarber" titulo="Foto do HubBarber" dica="Fotografe a tela de fechamento de caixa inteira, com os valores legíveis."
             foto={hub} setFoto={setHub} onUsar={() => setEtapa("pag")} />
         )}
         {etapa === "pag" && (
-          <EtapaFoto titulo="Foto da PagBank" dica="Fotografe o resumo de vendas do dia, mostrando o total e a quantidade."
+          <EtapaFoto tipo="pagbank" titulo="Foto da PagBank" dica="Fotografe o resumo de vendas do dia, mostrando o total e a quantidade."
             foto={pag} setFoto={setPag} onUsar={() => setEtapa("valores")} />
         )}
 
@@ -205,28 +207,61 @@ function CampoValor({ label, value, onChange }: { label: string; value: string; 
   );
 }
 
-function EtapaFoto({ titulo, dica, foto, setFoto, onUsar }: {
-  titulo: string; dica: string; foto: Foto | null; setFoto: (f: Foto | null) => void; onUsar: () => void;
+function blobParaBase64(blob: Blob) {
+  return new Promise<string>((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(String(r.result).split(",")[1] ?? "");
+    r.onerror = () => rej(r.error);
+    r.readAsDataURL(blob);
+  });
+}
+
+const DICAS_FOTO = ["Fotografe de frente, com a tela ocupando quase toda a foto", "Evite reflexo de luz em cima dos números", "Segure firme e toque na tela do celular para focar"];
+
+export function EtapaFoto({ tipo, titulo, dica, foto, setFoto, onUsar }: {
+  tipo: TipoFoto; titulo: string; dica: string; foto: Foto | null;
+  setFoto: React.Dispatch<React.SetStateAction<Foto | null>>; onUsar: () => void;
 }) {
   const ref = useRef<HTMLInputElement>(null);
+  const tentativa = useRef(0);
   const [processando, setProcessando] = useState(false);
-  useEffect(() => () => { if (foto) URL.revokeObjectURL(foto.preview); }, [foto]);
+  const [modalAberto, setModalAberto] = useState(false);
+  const preview = foto?.preview;
+  useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
 
-  const abrir = () => { if (ref.current) { ref.current.value = ""; ref.current.click(); } };
+  const abrir = () => { setModalAberto(false); if (ref.current) { ref.current.value = ""; ref.current.click(); } };
+
+  const conferir = async (blob: Blob, id: number) => {
+    let checagem: Foto["checagem"];
+    try {
+      checagem = await conferirFoto({ data: { tipo, imagem: await blobParaBase64(blob) } });
+    } catch {
+      checagem = "indisponivel";
+    }
+    if (id !== tentativa.current) return; // já tirou outra foto
+    setFoto((f) => (f ? { ...f, checagem } : f));
+    if (checagem !== "indisponivel" && !checagem.ok) setModalAberto(true);
+  };
+
   const aoCapturar = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const capturadaEm = new Date().toISOString();
+    const id = ++tentativa.current;
     setProcessando(true);
     try {
       const blob = await comprimirFoto(file);
-      setFoto({ blob, preview: URL.createObjectURL(blob), capturadaEm });
+      setFoto({ blob, preview: URL.createObjectURL(blob), capturadaEm, checagem: "conferindo" });
+      void conferir(blob, id);
     } catch {
       toast.error("Não foi possível processar a foto. Tente de novo.");
     } finally {
       setProcessando(false);
     }
   };
+
+  const checagem = foto?.checagem;
+  const erro = checagem && typeof checagem === "object" && !checagem.ok && checagem.problema ? DICA[checagem.problema] : null;
 
   return (
     <div className="flex flex-1 flex-col justify-between gap-6">
@@ -236,21 +271,58 @@ function EtapaFoto({ titulo, dica, foto, setFoto, onUsar }: {
         {/* capture="environment" abre direto a câmera traseira, sem galeria */}
         <input ref={ref} type="file" accept="image/*" capture="environment" className="hidden" onChange={aoCapturar} />
         {foto ? (
-          <img src={foto.preview} alt={titulo} className="max-h-[55vh] w-full rounded-2xl border object-contain bg-card shadow-card" />
+          <>
+            <img src={foto.preview} alt={titulo} className="max-h-[50vh] w-full rounded-2xl border object-contain bg-card shadow-card" />
+            <StatusChecagem checagem={checagem} tipo={tipo} onVerDica={() => setModalAberto(true)} />
+          </>
         ) : (
-          <button type="button" onClick={abrir} disabled={processando}
-            className="flex aspect-[3/4] w-full flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-input bg-card text-muted-foreground">
-            <Camera className="size-12" />
-            <span className="font-semibold">{processando ? "Processando…" : "Abrir câmera"}</span>
-          </button>
+          <>
+            <button type="button" onClick={abrir} disabled={processando}
+              className="flex aspect-[3/4] max-h-[45vh] w-full flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-input bg-card text-muted-foreground">
+              <Camera className="size-12" />
+              <span className="font-semibold">{processando ? "Processando…" : "Abrir câmera"}</span>
+            </button>
+            <ul className="space-y-1.5 text-sm text-muted-foreground">
+              {DICAS_FOTO.map((d) => <li key={d} className="flex gap-2"><Check className="mt-0.5 size-4 shrink-0 text-ok" />{d}</li>)}
+            </ul>
+          </>
         )}
       </div>
       {foto && (
         <div className="grid grid-cols-2 gap-3">
           <Button variant="outline" size="lg" className="h-14" onClick={abrir}><RotateCcw /> Tirar de novo</Button>
-          <Button size="lg" className="h-14" onClick={onUsar}><Check /> Usar foto</Button>
+          <Button size="lg" className="h-14" onClick={onUsar} disabled={checagem === "conferindo"}>
+            {checagem === "conferindo" ? <><Loader2 className="animate-spin" /> Conferindo…</> : <><Check /> Usar foto</>}
+          </Button>
         </div>
       )}
+
+      <Dialog open={modalAberto && !!erro} onOpenChange={setModalAberto}>
+        <DialogContent className="w-[calc(100%-2rem)] rounded-2xl">
+          <DialogHeader className="items-center text-center sm:text-center">
+            <div className="mb-2 flex size-14 items-center justify-center rounded-full bg-destructive/10 text-destructive"><XCircle className="size-8" /></div>
+            <DialogTitle className="text-xl">{TITULO_ERRO[tipo]}</DialogTitle>
+            <DialogDescription className="text-base">{erro?.motivo}</DialogDescription>
+          </DialogHeader>
+          <p className="rounded-xl bg-warn-soft p-3 text-sm"><b>Dica:</b> {erro?.dica}</p>
+          <DialogFooter className="gap-2 sm:flex-col sm:space-x-0">
+            <Button size="lg" className="h-12 w-full" onClick={abrir}><Camera /> Tirar outra foto</Button>
+            <Button variant="ghost" size="lg" className="h-12 w-full" onClick={() => { setModalAberto(false); onUsar(); }}>Usar assim mesmo</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
+}
+
+function StatusChecagem({ checagem, tipo, onVerDica }: { checagem: Foto["checagem"]; tipo: TipoFoto; onVerDica: () => void }) {
+  if (checagem === "conferindo") return <p className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="size-4 animate-spin" /> Conferindo se dá para ler os números…</p>;
+  if (checagem === "indisponivel") return <p className="text-sm text-muted-foreground">Não deu para conferir a foto agora. Confira se os números estão nítidos antes de usar.</p>;
+  if (checagem?.ok) return <p className="flex items-center gap-2 text-sm font-medium text-ok"><Check className="size-4" /> Números encontrados. Foto boa!</p>;
+  if (checagem) return (
+    <button type="button" onClick={onVerDica} className="flex w-full items-center gap-2 rounded-xl bg-destructive/10 p-3 text-left text-sm font-medium text-destructive">
+      <XCircle className="size-4 shrink-0" /> {TITULO_ERRO[tipo]}. Toque para ver a dica.
+    </button>
+  );
+  return null;
 }
