@@ -1,0 +1,1 @@
+ALTER TABLE public.unidades ALTER COLUMN codigo SET NOT NULL;

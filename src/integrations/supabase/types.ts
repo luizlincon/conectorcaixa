@@ -201,7 +201,7 @@ export type Database = {
       unidades: {
         Row: {
           ativa: boolean
-          codigo: string | null
+          codigo: string
           created_at: string
           data_inicio_assinatura: string
           dias_funcionamento: number[]
@@ -214,7 +214,7 @@ export type Database = {
         }
         Insert: {
           ativa?: boolean
-          codigo?: string | null
+          codigo: string
           created_at?: string
           data_inicio_assinatura?: string
           dias_funcionamento?: number[]
@@ -227,7 +227,7 @@ export type Database = {
         }
         Update: {
           ativa?: boolean
-          codigo?: string | null
+          codigo?: string
           created_at?: string
           data_inicio_assinatura?: string
           dias_funcionamento?: number[]
