@@ -133,7 +133,7 @@ function Caixa() {
           <form className="flex flex-1 flex-col justify-between gap-6"
             onSubmit={(e) => {
               e.preventDefault();
-              if (Object.values(vals).some((v) => parseBRL(v) === null)) return void toast.error("Preencha os três valores (zero é permitido).");
+              if (Object.values(vals).some((v) => parseBRL(v) === null)) { toast.error("Preencha os três valores (zero é permitido)."); return; }
               setEtapa("revisar");
             }}>
             <div className="space-y-6">
@@ -160,7 +160,7 @@ function Caixa() {
               </div>
               <dl className="divide-y rounded-xl border bg-card">
                 {[["Máquina", vals.maquina], ["Assinatura", vals.assinatura], ["Dinheiro", vals.dinheiro]].map(([k, v]) => (
-                  <div key={k} className="flex justify-between px-4 py-3"><dt className="text-muted-foreground">{k}</dt><dd className="font-semibold tabular">{brl(parseBRL(v))}</dd></div>
+                  <div key={k} className="flex justify-between px-4 py-3"><dt className="text-muted-foreground">{k}</dt><dd className="font-semibold tabular">{brl(parseBRL(v ?? ""))}</dd></div>
                 ))}
               </dl>
               <p className="text-sm text-muted-foreground">Depois de enviar, o fechamento fica bloqueado.</p>
