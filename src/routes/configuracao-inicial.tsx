@@ -15,6 +15,8 @@ export const Route = createFileRoute("/configuracao-inicial")({
       { name: "description", content: "Cadastre o dono da barbearia no primeiro acesso." },
       { property: "og:title", content: "Configuração inicial · Conferente de Caixa" },
       { property: "og:description", content: "Cadastre o dono da barbearia no primeiro acesso." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: Config,

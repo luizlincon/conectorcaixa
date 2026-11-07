@@ -15,7 +15,16 @@ import { feriadosQuery, unidadeQuery } from "@/lib/dados-dono";
 import { corrigirLeitura, lerNovamente, reabrirFechamento } from "@/lib/caixa.functions";
 import { useSessao } from "@/hooks/use-sessao";
 
-export const Route = createFileRoute("/_authenticated/painel/dia/$data")({ component: Detalhe });
+export const Route = createFileRoute("/_authenticated/painel/dia/$data")({
+  head: ({ params }) => ({ meta: [
+    { title: `Fechamento ${dataBR(params.data)} · Conferente de Caixa` },
+    { name: "description", content: "Conferência diária, fotos e alertas do caixa da unidade SCS." },
+    { property: "og:title", content: `Fechamento ${dataBR(params.data)} · Conferente de Caixa` },
+    { property: "og:description", content: "Conferência diária, fotos e alertas do caixa da unidade SCS." },
+    { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" },
+  ] }),
+  component: Detalhe,
+});
 
 function Detalhe() {
   const { data: dia } = Route.useParams();
@@ -153,7 +162,7 @@ function Detalhe() {
 
       {f.status === "enviado" && (
         <Button variant="outline" className="w-full" disabled={ocupado}
-          onClick={() => confirm("Reabrir o fechamento? O funcionário poderá enviar de novo (somente no mesmo dia) e a versão atual fica guardada.") && acao(() => reabrirFechamento({ data: { id: f.id } }), "Fechamento reaberto")}>
+          onClick={() => confirm("Reabrir o fechamento? Somente o dono poderá enviar de novo no mesmo dia. A versão atual fica guardada.") && acao(() => reabrirFechamento({ data: { id: f.id } }), "Fechamento reaberto")}>
           Reabrir fechamento
         </Button>
       )}

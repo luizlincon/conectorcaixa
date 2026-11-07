@@ -5,7 +5,16 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { brl, dataBR, hojeSP, MESES } from "@/lib/formato";
 import { fechamentosPeriodoQuery } from "@/lib/dados-dono";
 
-export const Route = createFileRoute("/_authenticated/painel/historico")({ component: Historico });
+export const Route = createFileRoute("/_authenticated/painel/historico")({
+  head: () => ({ meta: [
+    { title: "Histórico de faturamento · Conferente de Caixa" },
+    { name: "description", content: "Faturamento por dia, semana e mês da Navalha da Corte, unidade SCS." },
+    { property: "og:title", content: "Histórico de faturamento · Conferente de Caixa" },
+    { property: "og:description", content: "Faturamento por dia, semana e mês da Navalha da Corte, unidade SCS." },
+    { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" },
+  ] }),
+  component: Historico,
+});
 
 type Agrup = "dia" | "semana" | "mes";
 

@@ -12,7 +12,16 @@ import { dataBR } from "@/lib/formato";
 import { formatarTelefone, pinValido } from "@/lib/auth-utils";
 import { atualizarUsuario, criarUsuario, recalcularAlertas } from "@/lib/caixa.functions";
 
-export const Route = createFileRoute("/_authenticated/painel/config")({ component: Config });
+export const Route = createFileRoute("/_authenticated/painel/config")({
+  head: () => ({ meta: [
+    { title: "Ajustes da unidade SCS · Conferente de Caixa" },
+    { name: "description", content: "Usuários, parâmetros e feriados nacionais e de Brasília da unidade SCS." },
+    { property: "og:title", content: "Ajustes da unidade SCS · Conferente de Caixa" },
+    { property: "og:description", content: "Usuários, parâmetros e feriados nacionais e de Brasília da unidade SCS." },
+    { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" },
+  ] }),
+  component: Config,
+});
 
 function Secao({ titulo, children }: { titulo: string; children: React.ReactNode }) {
   return <section className="space-y-3 rounded-2xl border bg-card p-4 shadow-card"><h2 className="text-lg font-bold">{titulo}</h2>{children}</section>;
@@ -36,7 +45,8 @@ function Parametros() {
   const [inicio, setInicio] = useState("");
   useEffect(() => { if (u) { setHora(u.horario_limite.slice(0, 5)); setInicio(u.data_inicio_assinatura); } }, [u]);
   const salvar = async () => {
-    const { error } = await supabase.from("unidades").update({ horario_limite: hora, data_inicio_assinatura: inicio }).eq("id", u!.id);
+    if (!u) return;
+    const { error } = await supabase.from("unidades").update({ horario_limite: hora, data_inicio_assinatura: inicio }).eq("id", u.id);
     if (error) return void toast.error("Erro ao salvar");
     toast.success("Parâmetros salvos");
     qc.invalidateQueries({ queryKey: ["unidade"] });

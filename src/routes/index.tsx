@@ -18,6 +18,8 @@ export const Route = createFileRoute("/")({
       { name: "description", content: "Entre com telefone e PIN para fechar o caixa da Navalha da Corte." },
       { property: "og:title", content: "Entrar · Conferente de Caixa" },
       { property: "og:description", content: "Entre com telefone e PIN para fechar o caixa da Navalha da Corte." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: Login,
