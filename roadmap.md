@@ -1,6 +1,6 @@
 # Tarefas
-- [ ] Adicionar parâmetros, código único e consulta pública mínima de unidade ativa, preservando a SCS.
-- [ ] Cadastrar Studio 302, Planaltina e Mondial com padrões da SCS e verificar valores e restrições.
+- [x] Adicionar parâmetros, código único e consulta pública mínima de unidade ativa, preservando a SCS.
+- [x] Cadastrar Studio 302, Planaltina e Mondial com padrões da SCS e verificar valores e restrições.
 - [ ] Restringir leitura de unidades à própria unidade do funcionário ou ao dono; aceitar leitura pública autenticada de feriados no scan.
 - [ ] Verificar nome da unidade na conta de funcionário e painel na conta do dono.
 - [x] Bloquear INSERT direto de funcionário em fechamentos e fotos, sem alterar leitura ou upload (policies conferidas no banco).
