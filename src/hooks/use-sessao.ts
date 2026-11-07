@@ -6,6 +6,7 @@ export interface Sessao {
   nome: string;
   unidadeId: string | null;
   unidadeNome: string;
+  unidadeCodigo: string | null;
   papel: "dono" | "funcionario";
 }
 
@@ -15,7 +16,7 @@ export const sessaoQuery = queryOptions({
     const { data: auth } = await supabase.auth.getUser();
     if (!auth.user) return null;
     const [{ data: u }, { data: roles }] = await Promise.all([
-      supabase.from("usuarios").select("nome, unidade_id, ativo, unidades(nome)").eq("id", auth.user.id).maybeSingle(),
+      supabase.from("usuarios").select("nome, unidade_id, ativo, unidades(nome, codigo)").eq("id", auth.user.id).maybeSingle(),
       supabase.from("user_roles").select("role").eq("user_id", auth.user.id),
     ]);
     if (!u || !u.ativo) return null;
@@ -24,7 +25,8 @@ export const sessaoQuery = queryOptions({
       id: auth.user.id,
       nome: u.nome,
       unidadeId: u.unidade_id,
-      unidadeNome: (u.unidades as { nome: string } | null)?.nome ?? "SCS",
+      unidadeNome: (u.unidades as { nome: string } | null)?.nome ?? "",
+      unidadeCodigo: (u.unidades as { codigo: string } | null)?.codigo ?? null,
       papel,
     };
   },

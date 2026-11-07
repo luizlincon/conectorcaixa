@@ -10,17 +10,18 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { StatusSelo } from "@/components/StatusSelo";
 import { brl, dataBR, dataHoraSP, DIAS, parseBRL } from "@/lib/formato";
-import { avaliar, diaSemana, type LeituraHub, type LeituraPag } from "@/lib/regras";
-import { feriadosQuery, unidadeQuery } from "@/lib/dados-dono";
+import { avaliar, configDaUnidade, diaSemana, type LeituraHub, type LeituraPag } from "@/lib/regras";
+import { feriadosQuery } from "@/lib/dados-dono";
+import { useUnidadeAtual } from "@/lib/unidades";
 import { corrigirLeitura, lerNovamente, reabrirFechamento } from "@/lib/caixa.functions";
 import { useSessao } from "@/hooks/use-sessao";
 
 export const Route = createFileRoute("/_authenticated/painel/dia/$data")({
   head: ({ params }) => ({ meta: [
     { title: `Fechamento ${dataBR(params.data)} · Conferente de Caixa` },
-    { name: "description", content: "Conferência diária, fotos e alertas do caixa da unidade SCS." },
+    { name: "description", content: "Conferência diária, fotos e alertas do caixa da unidade." },
     { property: "og:title", content: `Fechamento ${dataBR(params.data)} · Conferente de Caixa` },
-    { property: "og:description", content: "Conferência diária, fotos e alertas do caixa da unidade SCS." },
+    { property: "og:description", content: "Conferência diária, fotos e alertas do caixa da unidade." },
     { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" },
   ] }),
   component: Detalhe,
@@ -31,15 +32,16 @@ function Detalhe() {
   const qc = useQueryClient();
   const { data: sessao } = useSessao();
   const { data: feriados = [] } = useQuery(feriadosQuery);
-  const { data: unidade } = useQuery(unidadeQuery);
+  const { unidade } = useUnidadeAtual();
   const [ampliada, setAmpliada] = useState<string | null>(null);
   const [ocupado, setOcupado] = useState(false);
   const [editando, setEditando] = useState(false);
 
   const q = useQuery({
-    queryKey: ["dia", dia],
+    queryKey: ["dia", unidade?.id, dia],
+    enabled: !!unidade,
     queryFn: async () => {
-      const { data: f } = await supabase.from("fechamentos").select("*").eq("data", dia).maybeSingle();
+      const { data: f } = await supabase.from("fechamentos").select("*").eq("unidade_id", unidade!.id).eq("data", dia).maybeSingle();
       if (!f) return null;
       const [{ data: fotos }, { data: alertas }] = await Promise.all([
         supabase.from("fotos").select("*").eq("fechamento_id", f.id).order("created_at", { ascending: false }),
@@ -55,7 +57,7 @@ function Detalhe() {
   });
 
   const atualizar = () => {
-    qc.invalidateQueries({ queryKey: ["dia", dia] });
+    qc.invalidateQueries({ queryKey: ["dia", unidade?.id, dia] });
     qc.invalidateQueries({ queryKey: ["fechamentos"] });
   };
   const acao = async (fn: () => Promise<unknown>, ok: string) => {
@@ -84,6 +86,7 @@ function Detalhe() {
   const r = avaliar({
     data: f.data, maquina: Number(f.valor_maquina), assinatura: Number(f.valor_assinatura), dinheiro: Number(f.valor_dinheiro),
     hub, pag, feriados: feriados.map((x) => x.data), dataInicioAssinatura: unidade?.data_inicio_assinatura ?? "2026-11-09",
+    config: configDaUnidade(unidade),
   });
   const abertos = alertas.filter((a) => !a.resolvido);
   const status = f.status !== "enviado" ? null : abertos.some((a) => a.nivel === "vermelho") ? "vermelho" : abertos.length ? "amarelo" : "verde";

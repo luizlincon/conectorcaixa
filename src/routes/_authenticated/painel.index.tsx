@@ -5,8 +5,9 @@ import { ChevronLeft, ChevronRight, LockKeyhole } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { statusInfo, StatusSelo, type StatusCal } from "@/components/StatusSelo";
 import { agoraHHMM, brl, dataBR, hojeSP, MESES } from "@/lib/formato";
-import { fechamentosPeriodoQuery, feriadosQuery, iso, ultimoDiaMes, unidadeQuery } from "@/lib/dados-dono";
+import { fechamentosPeriodoQuery, feriadosQuery, iso, ultimoDiaMes } from "@/lib/dados-dono";
 import { diaSemana, statusDoDia, type Nivel } from "@/lib/regras";
+import { useUnidadeAtual } from "@/lib/unidades";
 
 export const Route = createFileRoute("/_authenticated/painel/")({
   head: () => ({ meta: [
@@ -25,9 +26,9 @@ function Calendario() {
   const [mes, setMes] = useState(Number(hoje.slice(5, 7)) - 1);
   const ult = ultimoDiaMes(ano, mes);
   const de = iso(ano, mes, 1), ate = iso(ano, mes, ult);
-  const { data } = useQuery(fechamentosPeriodoQuery(de, ate));
+  const { unidade } = useUnidadeAtual();
+  const { data } = useQuery(fechamentosPeriodoQuery(unidade?.id, de, ate));
   const { data: feriados = [] } = useQuery(feriadosQuery);
-  const { data: unidade } = useQuery(unidadeQuery);
   const listaFeriados = feriados.map((f) => f.data);
 
   const mudar = (d: number) => {
@@ -42,7 +43,7 @@ function Calendario() {
     const niveis = (data?.alertas ?? []).filter((a) => a.data === d && !a.resolvido).map((a) => a.nivel as Nivel);
     const status = statusDoDia({
       data: d, hoje, agoraHHMM: agoraHHMM(), horarioLimite: unidade?.horario_limite ?? "20:00",
-      feriados: listaFeriados, enviado: !!f, niveisAbertos: niveis,
+      feriados: listaFeriados, enviado: !!f, niveisAbertos: niveis, diasFuncionamento: unidade?.dias_funcionamento,
     }) as StatusCal;
     return { d, dia: i + 1, status, f };
   });
@@ -63,7 +64,7 @@ function Calendario() {
         <Button variant="ghost" size="icon" onClick={() => mudar(1)} aria-label="Próximo mês"><ChevronRight /></Button>
       </div>
 
-      <Button asChild className="w-full"><Link to="/caixa"><LockKeyhole /> Fechar caixa de hoje</Link></Button>
+      {unidade && <Button asChild className="w-full"><Link to="/$unidade" params={{ unidade: unidade.codigo }}><LockKeyhole /> Fechar caixa de hoje · {unidade.nome}</Link></Button>}
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Kpi rotulo="Faturamento" valor={brl(avulso + assinatura)} destaque />

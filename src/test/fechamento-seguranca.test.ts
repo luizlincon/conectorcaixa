@@ -43,6 +43,9 @@ describe("Segurança do fechamento", () => {
     mocks.from.mockImplementation((table: string) => table === "fechamentos" ? {
       select: () => ({ eq: () => ({ eq: () => ({ maybeSingle: async () => ({ data: null }) }) }) }),
       insert: fechamentoInsert,
+    } : table === "unidades" ? {
+      // O servidor confere se a unidade do caixa existe e está ativa.
+      select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { id: "unidade", ativa: true } }) }) }),
     } : { insert: fotosInsert });
     const userFrom = vi.fn().mockReturnValue({ select: () => ({ eq: () => ({ single: async () => ({ data: { nome: "Funcionário", unidade_id: "unidade", ativo: true } }) }) }) });
     const context = {

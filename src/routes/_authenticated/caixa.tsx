@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -15,6 +15,7 @@ import { diaSemana } from "@/lib/regras";
 import { comprimirFoto } from "@/lib/imagem";
 import { conferirFoto, enviarFechamento } from "@/lib/caixa.functions";
 import { podeOperarCaixa, podeVerMeses } from "@/lib/permissoes";
+import { useUnidadeAtual, type UnidadePublica } from "@/lib/unidades";
 
 export const Route = createFileRoute("/_authenticated/caixa")({
   head: () => ({
@@ -27,13 +28,34 @@ export const Route = createFileRoute("/_authenticated/caixa")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: Caixa,
+  component: IrParaCaixa,
 });
+
+/** O caixa agora fica no endereço da unidade (/scs, /studio302…): /caixa só redireciona. */
+function IrParaCaixa() {
+  const { data: sessao, isLoading } = useSessao();
+  const { unidade: escolhida, isLoading: carregandoUnidades } = useUnidadeAtual();
+  const navigate = useNavigate();
+  const codigo = sessao?.papel === "dono" ? escolhida?.codigo : sessao?.unidadeCodigo;
+  useEffect(() => {
+    if (isLoading || carregandoUnidades) return;
+    if (codigo) navigate({ to: "/$unidade", params: { unidade: codigo }, replace: true });
+  }, [isLoading, carregandoUnidades, codigo, navigate]);
+  if (!isLoading && !carregandoUnidades && !codigo) return (
+    <main className="mx-auto min-h-screen max-w-md space-y-6 px-5 py-6">
+      <Marca />
+      <h1 className="text-2xl font-bold">Sem unidade</h1>
+      <p className="text-muted-foreground">Seu usuário ainda não está ligado a nenhuma unidade. Fale com o dono.</p>
+      <Button variant="outline" onClick={sair}><LogOut /> Sair</Button>
+    </main>
+  );
+  return null;
+}
 
 type Foto = { blob: Blob; preview: string; capturadaEm: string; checagem?: ChecagemFoto | "conferindo" | "indisponivel" };
 type Etapa = "inicio" | "hub" | "pag" | "valores" | "revisar";
 
-function Caixa() {
+export function Caixa({ unidade }: { unidade: UnidadePublica }) {
   const { data: sessao } = useSessao();
   const qc = useQueryClient();
   const hoje = hojeSP();
@@ -44,12 +66,11 @@ function Caixa() {
   const [enviando, setEnviando] = useState(false);
 
   const { data: fechamento, isLoading } = useQuery({
-    queryKey: ["fechamento-hoje", sessao?.unidadeId, hoje],
-    enabled: !!sessao?.unidadeId && podeOperarCaixa(sessao?.papel),
+    queryKey: ["fechamento-hoje", unidade.id, hoje],
+    enabled: podeOperarCaixa(sessao?.papel),
     queryFn: async () => {
-      if (!sessao?.unidadeId) return null;
       const { data } = await supabase.from("fechamentos").select("status, enviado_em, enviado_por_nome")
-        .eq("unidade_id", sessao.unidadeId).eq("data", hoje).maybeSingle();
+        .eq("unidade_id", unidade.id).eq("data", hoje).maybeSingle();
       return data;
     },
   });
@@ -57,7 +78,7 @@ function Caixa() {
   const bloqueado = fechamento && fechamento.status !== "reaberto";
 
   const enviar = async () => {
-    if (!podeOperarCaixa(sessao?.papel) || !sessao?.unidadeId) return void toast.error("Seu usuário está sem unidade. Fale com o dono.");
+    if (!podeOperarCaixa(sessao?.papel)) return void toast.error("Seu usuário não pode fechar o caixa.");
     if (!hub || !pag) return void toast.error("Tire as duas fotos antes de enviar.");
     const maquina = parseBRL(vals.maquina), assinatura = parseBRL(vals.assinatura), dinheiro = parseBRL(vals.dinheiro);
     if (maquina === null || assinatura === null || dinheiro === null) return void toast.error("Preencha os três valores (zero é permitido).");
@@ -65,14 +86,14 @@ function Caixa() {
     try {
       const fotos = [];
       for (const [tipo, f] of [["hubbarber", hub], ["pagbank", pag]] as const) {
-        const path = `${sessao.unidadeId}/${hoje}/${tipo}-${Date.now()}.jpg`;
+        const path = `${unidade.id}/${hoje}/${tipo}-${Date.now()}.jpg`;
         const { error } = await supabase.storage.from("fotos-caixa").upload(path, f.blob, { contentType: "image/jpeg" });
         if (error) throw new Error("Falha ao enviar a foto. Verifique a internet.");
         fotos.push({ tipo, path, capturada_em: f.capturadaEm });
       }
       await enviarFechamento({
         data: {
-          maquina, assinatura, dinheiro, fotos,
+          maquina, assinatura, dinheiro, fotos, unidade_id: unidade.id,
         },
       });
       toast.success("Fechamento enviado!");
@@ -91,7 +112,7 @@ function Caixa() {
 
   if (sessao && !podeOperarCaixa(sessao.papel)) return (
     <main className="mx-auto min-h-screen max-w-md space-y-8 px-5 py-6">
-      <header className="flex items-center justify-between"><Marca subtitulo={`Unidade ${sessao.unidadeNome}`} /><Button variant="ghost" size="icon" onClick={sair} aria-label="Sair"><LogOut /></Button></header>
+      <header className="flex items-center justify-between"><Marca subtitulo={`Unidade ${unidade.nome}`} /><Button variant="ghost" size="icon" onClick={sair} aria-label="Sair"><LogOut /></Button></header>
       <h1 className="text-2xl font-bold">Acesso restrito</h1>
       <p className="text-muted-foreground">Seu usuário não tem permissão para operar o caixa.</p>
     </main>
@@ -103,7 +124,7 @@ function Caixa() {
         {voltar[etapa] ? (
           <Button variant="ghost" size="sm" onClick={() => { const anterior = voltar[etapa]; if (anterior) setEtapa(anterior); }} className="-ml-2"><ChevronLeft /> Voltar</Button>
         ) : (
-          <Marca subtitulo={`Unidade ${sessao?.unidadeNome ?? ""}`} />
+          <Marca subtitulo={`Unidade ${unidade.nome}`} />
         )}
         {etapa === "inicio" && (podeVerMeses(sessao?.papel)
           ? <Button variant="ghost" size="icon" asChild><Link to="/painel" aria-label="Voltar ao painel"><ChevronLeft /></Link></Button>

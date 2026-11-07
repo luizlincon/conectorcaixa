@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as UnidadeRouteImport } from './routes/$unidade'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as ConfiguracaoInicialRouteImport } from './routes/configuracao-inicial'
 import { Route as AuthenticatedCaixaRouteImport } from './routes/_authenticated/caixa'
@@ -22,6 +23,11 @@ import { Route as AuthenticatedPainelDiaDataRouteImport } from './routes/_authen
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UnidadeRoute = UnidadeRouteImport.update({
+  id: '/$unidade',
+  path: '/$unidade',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
@@ -70,6 +76,7 @@ const AuthenticatedPainelDiaDataRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/$unidade': typeof UnidadeRoute
   '/configuracao-inicial': typeof ConfiguracaoInicialRoute
   '/caixa': typeof AuthenticatedCaixaRoute
   '/painel': typeof AuthenticatedPainelRouteWithChildren
@@ -80,6 +87,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/$unidade': typeof UnidadeRoute
   '/configuracao-inicial': typeof ConfiguracaoInicialRoute
   '/caixa': typeof AuthenticatedCaixaRoute
   '/painel/config': typeof AuthenticatedPainelConfigRoute
@@ -91,6 +99,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/$unidade': typeof UnidadeRoute
   '/configuracao-inicial': typeof ConfiguracaoInicialRoute
   '/_authenticated/caixa': typeof AuthenticatedCaixaRoute
   '/_authenticated/painel': typeof AuthenticatedPainelRouteWithChildren
@@ -103,6 +112,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/$unidade'
     | '/configuracao-inicial'
     | '/caixa'
     | '/painel'
@@ -113,6 +123,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/$unidade'
     | '/configuracao-inicial'
     | '/caixa'
     | '/painel/config'
@@ -123,6 +134,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_authenticated'
+    | '/$unidade'
     | '/configuracao-inicial'
     | '/_authenticated/caixa'
     | '/_authenticated/painel'
@@ -135,6 +147,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  UnidadeRoute: typeof UnidadeRoute
   ConfiguracaoInicialRoute: typeof ConfiguracaoInicialRoute
 }
 
@@ -145,6 +158,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$unidade': {
+      id: '/$unidade'
+      path: '/$unidade'
+      fullPath: '/$unidade'
+      preLoaderRoute: typeof UnidadeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -239,6 +259,7 @@ const AuthenticatedRouteRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  UnidadeRoute: UnidadeRoute,
   ConfiguracaoInicialRoute: ConfiguracaoInicialRoute,
 }
 export const routeTree = rootRouteImport

@@ -44,6 +44,52 @@ export interface EntradaRegras {
   pag: LeituraPag | null;
   feriados: string[];
   dataInicioAssinatura: string; // YYYY-MM-DD
+  /** Regras da unidade; sem isso valem as regras originais da SCS. */
+  config?: ConfigUnidade;
+}
+
+/** Regras que mudam de uma unidade para outra (vêm da tabela `unidades`). */
+export interface ConfigUnidade {
+  valorPlano: number; // reais por serviço do plano de assinatura
+  diasFuncionamento: number[]; // 0 = domingo ... 6 = sábado
+  diasIlimitado: number[]; // dias em que o ilimitado (R$ 0,01) vale
+  multiploAvulso: number; // reais
+}
+
+/** Regras originais da SCS: plano R$ 35, seg–sex, ilimitado seg–qua, avulso múltiplo de R$ 5. */
+export const CONFIG_PADRAO: ConfigUnidade = {
+  valorPlano: 35,
+  diasFuncionamento: [1, 2, 3, 4, 5],
+  diasIlimitado: [1, 2, 3],
+  multiploAvulso: 5,
+};
+
+/** Converte uma linha de `unidades` (ou parte dela) na configuração das regras. */
+export function configDaUnidade(u?: {
+  valor_plano?: number | string | null;
+  dias_funcionamento?: number[] | null;
+  dias_ilimitado?: number[] | null;
+  multiplo_avulso?: number | string | null;
+} | null): ConfigUnidade {
+  const num = (v: unknown, padrao: number) => (Number(v) > 0 ? Number(v) : padrao);
+  return {
+    valorPlano: num(u?.valor_plano, CONFIG_PADRAO.valorPlano),
+    diasFuncionamento: u?.dias_funcionamento ?? CONFIG_PADRAO.diasFuncionamento,
+    diasIlimitado: u?.dias_ilimitado ?? CONFIG_PADRAO.diasIlimitado,
+    multiploAvulso: num(u?.multiplo_avulso, CONFIG_PADRAO.multiploAvulso),
+  };
+}
+
+const NOMES_DIAS = ["domingo", "segunda", "terça", "quarta", "quinta", "sexta", "sábado"];
+
+/** "segunda a sexta", "segunda, quarta e sábado", "nenhum dia". */
+export function descreverDias(dias: number[]): string {
+  const d = [...new Set(dias)].sort((a, b) => a - b);
+  if (!d.length) return "nenhum dia";
+  const seguidos = d.length > 2 && d.every((x, i) => i === 0 || x === d[i - 1]! + 1);
+  if (seguidos) return `${NOMES_DIAS[d[0]!]} a ${NOMES_DIAS[d[d.length - 1]!]}`;
+  const nomes = d.map((x) => NOMES_DIAS[x]!);
+  return nomes.length === 1 ? nomes[0]! : `${nomes.slice(0, -1).join(", ")} e ${nomes[nomes.length - 1]}`;
 }
 
 export interface AlertaGerado {
@@ -64,7 +110,6 @@ export interface ResultadoRegras {
   status: Exclude<StatusDia, "nao_enviado">;
 }
 
-export const VALOR_PLANO_CENTAVOS = 3500;
 
 export const c = (v: number | null | undefined): number | null =>
   v === null || v === undefined || Number.isNaN(Number(v)) ? null : Math.round(Number(v) * 100);
@@ -78,19 +123,19 @@ export function diaSemana(data: string): number {
   return new Date(Date.UTC(y, m - 1, d)).getUTCDay();
 }
 
-export function ehDiaUtil(data: string, feriados: string[]): boolean {
-  const dow = diaSemana(data);
-  return dow >= 1 && dow <= 5 && !feriados.includes(data);
+export function ehDiaUtil(data: string, feriados: string[], diasFuncionamento = CONFIG_PADRAO.diasFuncionamento): boolean {
+  return diasFuncionamento.includes(diaSemana(data)) && !feriados.includes(data);
 }
 
-/** Decompõe o valor de assinatura: R$ 35,00 por serviço do plano + R$ 0,01 por ilimitado. */
-export function decomporAssinatura(valor: number) {
+/** Decompõe o valor de assinatura: valor do plano por serviço (R$ 35,00 na SCS) + R$ 0,01 por ilimitado. */
+export function decomporAssinatura(valor: number, valorPlano = CONFIG_PADRAO.valorPlano) {
   const cent = c(valor) ?? 0;
-  const inteiroReais = Math.floor(cent / 100);
+  const planoC = c(valorPlano) ?? 3500;
   const ilimitados = cent % 100;
-  const servicos = Math.floor(inteiroReais / 35);
-  const sobra = inteiroReais % 35;
-  return { servicos, ilimitados, sobraReais: sobra };
+  const inteiroC = cent - ilimitados;
+  const servicos = Math.floor(inteiroC / planoC);
+  const sobraC = inteiroC - servicos * planoC;
+  return { servicos, ilimitados, sobraReais: sobraC / 100 };
 }
 
 export function avaliar(e: EntradaRegras): ResultadoRegras {
@@ -101,9 +146,10 @@ export function avaliar(e: EntradaRegras): ResultadoRegras {
   const saidas = hub?.saidas ?? [];
   const lanc = hub?.lancamentos ?? [];
   const dow = diaSemana(e.data);
+  const cfg = e.config ?? CONFIG_PADRAO;
 
-  // 1. Dias de funcionamento
-  if (dow === 0 || dow === 6) add(1, "amarelo", "Lançamento em fim de semana (unidade funciona de segunda a sexta).");
+  // 1. Dias de funcionamento (da unidade)
+  if (!cfg.diasFuncionamento.includes(dow)) add(1, "amarelo", `Lançamento em ${NOMES_DIAS[dow]} (a unidade funciona de ${descreverDias(cfg.diasFuncionamento)}).`);
   else if (e.feriados.includes(e.data)) add(1, "amarelo", "Lançamento em feriado.");
 
   // 2. Abrir e fechar no mesmo dia — e, quando a foto mostra a data, ela tem que ser deste dia
@@ -156,24 +202,25 @@ export function avaliar(e: EntradaRegras): ResultadoRegras {
   // 6. Composição da assinatura
   let servicosPlano: number | null = null, ilimitados: number | null = null, sobra: number | null = null;
   if (assinLidaC !== null) {
-    const d = decomporAssinatura(assinLidaC / 100);
+    const d = decomporAssinatura(assinLidaC / 100, cfg.valorPlano);
     servicosPlano = d.servicos; ilimitados = d.ilimitados; sobra = d.sobraReais;
-    if (d.sobraReais !== 0) add(6, "amarelo", `Assinatura não é múltiplo de R$ 35,00: sobram ${brl(d.sobraReais * 100)}.`);
+    if (d.sobraReais !== 0) add(6, "amarelo", `Assinatura não é múltiplo de ${brl(c(cfg.valorPlano)!)}: sobram ${brl(Math.round(d.sobraReais * 100))}.`);
     const dig = c(e.assinatura)!;
     if (dig !== assinLidaC) add(6, "amarelo", `Assinatura digitada ${brl(dig)} difere da lida no HubBarber ${brl(assinLidaC)}.`);
   } else {
     add(6, "amarelo", "Não foi possível conferir a assinatura: valor não identificado.");
   }
 
-  // 7. Ilimitado só seg-qua
-  if (dow === 4 || dow === 5) {
+  // 7. Ilimitado só nos dias permitidos da unidade (SCS: seg–qua). Dia sem expediente já cai na regra 1.
+  if (cfg.diasFuncionamento.includes(dow) && !cfg.diasIlimitado.includes(dow)) {
     const temCentavo = lanc.some((l) => c(l.valor) === 1) || (ilimitados ?? 0) > 0;
-    if (temCentavo) add(7, "amarelo", "Atendimento ilimitado (R$ 0,01) em quinta ou sexta — só vale de segunda a quarta.");
+    if (temCentavo) add(7, "amarelo", `Atendimento ilimitado (R$ 0,01) em ${NOMES_DIAS[dow]} — só vale de ${descreverDias(cfg.diasIlimitado)}.`);
   }
 
-  // 8. Avulso múltiplo de R$ 5
+  // 8. Avulso múltiplo do valor da unidade (SCS: R$ 5)
   const avulsoC = maq + din;
-  if (avulsoC % 500 !== 0) add(8, "amarelo", `Receita avulsa ${brl(avulsoC)} não é múltiplo de R$ 5,00 — possível desconto ou erro.`);
+  const multC = c(cfg.multiploAvulso) ?? 500;
+  if (avulsoC % multC !== 0) add(8, "amarelo", `Receita avulsa ${brl(avulsoC)} não é múltiplo de ${brl(multC)} — possível desconto ou erro.`);
 
   // 9. Saída sem descrição
   const semDesc = saidas.filter((s) => !(s.descricao ?? "").trim() || s.descricao === "não identificado");
@@ -205,9 +252,10 @@ export function statusDoDia(opts: {
   feriados: string[];
   enviado: boolean;
   niveisAbertos: Nivel[];
+  diasFuncionamento?: number[] | undefined;
 }): StatusDia | "futuro" | "sem_expediente" {
   if (!opts.enviado) {
-    if (!ehDiaUtil(opts.data, opts.feriados)) return "sem_expediente";
+    if (!ehDiaUtil(opts.data, opts.feriados, opts.diasFuncionamento)) return "sem_expediente";
     if (opts.data > opts.hoje) return "futuro";
     if (opts.data === opts.hoje && opts.agoraHHMM < opts.horarioLimite.slice(0, 5)) return "futuro";
     return "nao_enviado";

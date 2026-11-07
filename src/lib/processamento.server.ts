@@ -1,4 +1,4 @@
-import { avaliar, type LeituraHub, type LeituraPag } from "./regras";
+import { avaliar, configDaUnidade, type LeituraHub, type LeituraPag } from "./regras";
 import { lerHub, lerPag } from "./leitura.server";
 
 type Admin = Awaited<typeof import("@/integrations/supabase/client.server")>["supabaseAdmin"];
@@ -39,7 +39,7 @@ export async function gerarAlertas(admin: Admin, fechamentoId: string) {
   if (!f) throw new Error("Fechamento não encontrado");
   const [{ data: feriados }, { data: unidade }] = await Promise.all([
     admin.from("feriados").select("data"),
-    admin.from("unidades").select("data_inicio_assinatura").eq("id", f.unidade_id).single(),
+    admin.from("unidades").select("data_inicio_assinatura, valor_plano, dias_funcionamento, dias_ilimitado, multiplo_avulso").eq("id", f.unidade_id).single(),
   ]);
   const r = avaliar({
     data: f.data,
@@ -50,6 +50,7 @@ export async function gerarAlertas(admin: Admin, fechamentoId: string) {
     pag: (f.leitura_pag as LeituraPag | null) ?? null,
     feriados: (feriados ?? []).map((x) => x.data),
     dataInicioAssinatura: unidade?.data_inicio_assinatura ?? "2026-11-09",
+    config: configDaUnidade(unidade),
   });
   await admin.from("alertas").delete().eq("fechamento_id", fechamentoId).eq("resolvido", false);
   if (r.alertas.length) {

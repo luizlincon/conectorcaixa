@@ -4,13 +4,14 @@ import { useState } from "react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { brl, dataBR, hojeSP, MESES } from "@/lib/formato";
 import { fechamentosPeriodoQuery } from "@/lib/dados-dono";
+import { useUnidadeAtual } from "@/lib/unidades";
 
 export const Route = createFileRoute("/_authenticated/painel/historico")({
   head: () => ({ meta: [
     { title: "Histórico de faturamento · Conferente de Caixa" },
-    { name: "description", content: "Faturamento por dia, semana e mês da Navalha da Corte, unidade SCS." },
+    { name: "description", content: "Faturamento por dia, semana e mês de cada unidade da Navalha da Corte." },
     { property: "og:title", content: "Histórico de faturamento · Conferente de Caixa" },
-    { property: "og:description", content: "Faturamento por dia, semana e mês da Navalha da Corte, unidade SCS." },
+    { property: "og:description", content: "Faturamento por dia, semana e mês de cada unidade da Navalha da Corte." },
     { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" },
   ] }),
   component: Historico,
@@ -30,7 +31,8 @@ function Historico() {
   const hoje = hojeSP();
   const [agrup, setAgrup] = useState<Agrup>("dia");
   const de = (() => { const [y = 0, m = 1] = hoje.split("-").map(Number); const d = new Date(Date.UTC(y, m - 12, 1)); return d.toISOString().slice(0, 10); })();
-  const { data } = useQuery(fechamentosPeriodoQuery(de, hoje));
+  const { unidade } = useUnidadeAtual();
+  const { data } = useQuery(fechamentosPeriodoQuery(unidade?.id, de, hoje));
   const enviados = (data?.fechamentos ?? []).filter((f) => f.status === "enviado");
 
   const grupos = new Map<string, { avulso: number; assinatura: number; dias: number }>();

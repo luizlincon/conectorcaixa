@@ -3,7 +3,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { emailDoTelefone, normalizarTelefone, senhaDoPin } from "./auth-utils";
 import { hojeSP } from "./formato";
-import { podeAcessarDia, podeOperarCaixa } from "./permissoes";
+import { podeAcessarDia, podeOperarCaixa, unidadeDoCaixa } from "./permissoes";
 
 const pin = z.string().regex(/^\d{4}$/, "PIN deve ter 4 dígitos");
 const telefone = z.string().transform(normalizarTelefone).refine((t) => t.length >= 10 && t.length <= 11, "Telefone inválido");
@@ -39,9 +39,18 @@ export const criarPrimeiroDono = createServerFn({ method: "POST" })
 
 async function criarConta(
   a: Awaited<ReturnType<typeof admin>>,
-  d: { nome: string; telefone: string; pin: string; papel: "dono" | "funcionario" },
+  d: { nome: string; telefone: string; pin: string; papel: "dono" | "funcionario"; unidade_id?: string | undefined },
 ) {
-  const { data: un } = await a.from("unidades").select("id").eq("nome", "SCS").single();
+  let unidadeId = d.unidade_id ?? null;
+  if (unidadeId) {
+    const { data: un } = await a.from("unidades").select("id").eq("id", unidadeId).maybeSingle();
+    if (!un) throw new Error("Unidade não encontrada.");
+  } else {
+    // Sem unidade escolhida (ex.: primeiro dono): usa a SCS, ou a primeira unidade ativa.
+    const { data: scs } = await a.from("unidades").select("id").eq("codigo", "scs").maybeSingle();
+    const { data: primeira } = scs ? { data: scs } : await a.from("unidades").select("id").eq("ativa", true).order("created_at").limit(1).maybeSingle();
+    unidadeId = primeira?.id ?? null;
+  }
   const { data: criado, error } = await a.auth.admin.createUser({
     email: emailDoTelefone(d.telefone),
     password: senhaDoPin(d.pin),
@@ -50,7 +59,7 @@ async function criarConta(
   });
   if (error || !criado.user) throw new Error(error?.message.includes("already") ? "Telefone já cadastrado." : error?.message ?? "Erro ao criar usuário");
   const id = criado.user.id;
-  const { error: e1 } = await a.from("usuarios").insert({ id, nome: d.nome, telefone: d.telefone, unidade_id: un?.id ?? null });
+  const { error: e1 } = await a.from("usuarios").insert({ id, nome: d.nome, telefone: d.telefone, unidade_id: unidadeId });
   const { error: e2 } = await a.from("user_roles").insert({ user_id: id, role: d.papel });
   if (e1 || e2) {
     await a.auth.admin.deleteUser(id);
@@ -102,22 +111,27 @@ export const enviarFechamento = createServerFn({ method: "POST" })
         (fs) => fs.some((f) => f.tipo === "hubbarber") && fs.some((f) => f.tipo === "pagbank"),
         "Envie uma foto do HubBarber e uma da PagBank.",
       ),
+      /** Unidade do caixa (vem do endereço /codigo). Funcionário só pode a dele; o dono pode qualquer uma. */
+      unidade_id: z.string().uuid().optional(),
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
     const papel = await papelNoCaixa(context);
     const { data: u } = await context.supabase.from("usuarios").select("nome, unidade_id, ativo").eq("id", context.userId).single();
-    if (!u?.ativo || !u.unidade_id) throw new Error("Usuário sem unidade ativa.");
+    if (!u?.ativo) throw new Error("Usuário inativo.");
+    const unidadeId = unidadeDoCaixa(papel, u.unidade_id, data.unidade_id);
+    const a = await admin();
+    const { data: unidade } = await a.from("unidades").select("id, ativa").eq("id", unidadeId).maybeSingle();
+    if (!unidade?.ativa) throw new Error("Unidade inativa ou não encontrada.");
     const hoje = hojeSP();
     for (const f of data.fotos) {
       const [unidadeFoto, diaFoto, arquivo = "", ...resto] = f.path.split("/");
       const nomeValido = resto.length === 0 && new RegExp(`^${f.tipo}-\\d+\\.jpg$`).test(arquivo);
-      if (unidadeFoto !== u.unidade_id || diaFoto !== hoje || !nomeValido || !podeAcessarDia(papel, diaFoto, hoje)) {
+      if (unidadeFoto !== unidadeId || diaFoto !== hoje || !nomeValido || !podeAcessarDia(papel, diaFoto, hoje)) {
         throw new Error("Use fotos do caixa de hoje da sua unidade.");
       }
     }
-    const a = await admin();
-    const { data: existente } = await a.from("fechamentos").select("*").eq("unidade_id", u.unidade_id).eq("data", hoje).maybeSingle();
+    const { data: existente } = await a.from("fechamentos").select("*").eq("unidade_id", unidadeId).eq("data", hoje).maybeSingle();
     if (existente && existente.status !== "reaberto") throw new Error("O fechamento de hoje já foi enviado.");
 
     const valores = {
@@ -141,7 +155,7 @@ export const enviarFechamento = createServerFn({ method: "POST" })
       const { error } = await a.from("fechamentos").update(valores).eq("id", id);
       if (error) throw new Error("Não foi possível salvar o fechamento.");
     } else {
-      const { data: novo, error } = await a.from("fechamentos").insert({ ...valores, unidade_id: u.unidade_id, data: hoje }).select("id").single();
+      const { data: novo, error } = await a.from("fechamentos").insert({ ...valores, unidade_id: unidadeId, data: hoje }).select("id").single();
       if (error || !novo) throw new Error("Não foi possível salvar o fechamento.");
       id = novo.id;
     }
@@ -226,7 +240,11 @@ export const recalcularAlertas = createServerFn({ method: "POST" })
 
 export const criarUsuario = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ nome: z.string().trim().min(2), telefone, pin, papel: z.enum(["dono", "funcionario"]) }).parse(d))
+  .inputValidator((d) =>
+    z.object({ nome: z.string().trim().min(2), telefone, pin, papel: z.enum(["dono", "funcionario"]), unidade_id: z.string().uuid().optional() })
+      .refine((x) => x.papel === "dono" || !!x.unidade_id, "Escolha a unidade do funcionário.")
+      .parse(d),
+  )
   .handler(async ({ data, context }) => {
     await exigirDono(context);
     await criarConta(await admin(), data);
@@ -235,11 +253,17 @@ export const criarUsuario = createServerFn({ method: "POST" })
 
 export const atualizarUsuario = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => z.object({ id: z.string().uuid(), ativo: z.boolean().optional(), pin: pin.optional() }).parse(d))
+  .inputValidator((d) => z.object({ id: z.string().uuid(), ativo: z.boolean().optional(), pin: pin.optional(), unidade_id: z.string().uuid().optional() }).parse(d))
   .handler(async ({ data, context }) => {
     await exigirDono(context);
     if (data.id === context.userId && data.ativo === false) throw new Error("Você não pode desativar a si mesmo.");
     const a = await admin();
+    if (data.unidade_id) {
+      const { data: un } = await a.from("unidades").select("id").eq("id", data.unidade_id).maybeSingle();
+      if (!un) throw new Error("Unidade não encontrada.");
+      const { error } = await a.from("usuarios").update({ unidade_id: data.unidade_id }).eq("id", data.id);
+      if (error) throw new Error("Não foi possível trocar a unidade.");
+    }
     if (data.pin) await a.auth.admin.updateUserById(data.id, { password: senhaDoPin(data.pin) });
     if (data.ativo !== undefined) {
       await a.from("usuarios").update({ ativo: data.ativo }).eq("id", data.id);
