@@ -100,7 +100,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       // Sistema interno: fora dos buscadores.
       { name: "robots", content: "noindex, nofollow" },
       { name: "apple-mobile-web-app-title", content: "Navalha da Corte" },
-      { name: "theme-color", content: "#f6efe3" },
+      { name: "theme-color", content: "#0f0f0f" },
     ],
     links: [
       { rel: "preconnect", href: "https://fonts.googleapis.com" },

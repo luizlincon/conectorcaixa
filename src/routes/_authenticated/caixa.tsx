@@ -133,7 +133,7 @@ export function Caixa({ unidade }: { unidade: UnidadePublica }) {
       </header>
       {etapa !== "inicio" && (
         <div className="mt-4 grid grid-cols-4 gap-1.5">
-          {[1, 2, 3, 4].map((i) => <div key={i} className={`h-1.5 rounded-full ${i <= passo ? "bg-accent" : "bg-muted"}`} />)}
+          {[1, 2, 3, 4].map((i) => <div key={i} className={`h-1.5 rounded-full ${i <= passo ? "bg-primary" : "bg-secondary"}`} />)}
         </div>
       )}
 

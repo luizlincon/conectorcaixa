@@ -83,7 +83,7 @@ function Calendario() {
             const info = statusInfo[status];
             const conteudo = (
               <>
-                <span className={`text-sm font-semibold tabular ${d === hoje ? "underline decoration-accent decoration-2 underline-offset-4" : ""}`}>{dia}</span>
+                <span className={`text-sm font-semibold tabular ${d === hoje ? "underline decoration-primary decoration-2 underline-offset-4" : ""}`}>{dia}</span>
                 <span className={`mt-1 size-2 rounded-full ${info.dot}`} />
               </>
             );

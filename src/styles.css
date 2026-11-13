@@ -10,8 +10,7 @@
  * The @theme inline block maps CSS custom properties to Tailwind utility
  * classes (e.g. --color-primary -> bg-primary, text-primary).
  *
- * The :root and .dark blocks define the actual color values using oklch.
- * All colors MUST use oklch format.
+ * The :root block defines the actual color values (hex from the brand palette).
  *
  * To add a new semantic color:
  * 1. Add the variable to :root (light value) and .dark (dark value)
@@ -72,50 +71,56 @@
   --shadow-card: var(--shadow-card);
 }
 
+/*
+ * Paleta Navalha da Corte (tema escuro):
+ *   #0F0F0F fundo · #202020 superfícies · #5DD62C verde principal · #337418 verde escuro · #F8F8F8 texto
+ * Amarelo e vermelho continuam existindo só para os ALERTAS (atenção / possível perda), porque têm significado.
+ */
 :root {
+  color-scheme: dark;
   --radius: 0.875rem;
-  --background: oklch(0.968 0.014 78);
-  --foreground: oklch(0.2 0.02 45);
-  --card: oklch(0.99 0.008 80);
-  --card-foreground: oklch(0.2 0.02 45);
-  --popover: oklch(0.99 0.008 80);
-  --popover-foreground: oklch(0.2 0.02 45);
-  --primary: oklch(0.24 0.025 45);
-  --primary-foreground: oklch(0.97 0.014 78);
-  --secondary: oklch(0.92 0.02 75);
-  --secondary-foreground: oklch(0.24 0.025 45);
-  --muted: oklch(0.93 0.015 75);
-  --muted-foreground: oklch(0.48 0.02 50);
-  --accent: oklch(0.72 0.12 70);
-  --accent-foreground: oklch(0.2 0.02 45);
-  --destructive: oklch(0.52 0.19 27);
-  --destructive-foreground: oklch(0.98 0.01 80);
-  --border: oklch(0.87 0.02 70);
-  --input: oklch(0.85 0.02 70);
-  --ring: oklch(0.72 0.12 70);
-  --ok: oklch(0.55 0.12 150);
-  --ok-soft: oklch(0.93 0.05 150);
-  --warn: oklch(0.72 0.15 75);
-  --warn-soft: oklch(0.94 0.07 85);
-  --danger: oklch(0.52 0.19 27);
-  --danger-soft: oklch(0.93 0.05 27);
-  --pending: oklch(0.6 0.01 60);
-  --pending-soft: oklch(0.9 0.008 70);
-  --stripe: repeating-linear-gradient(135deg, var(--destructive) 0 10px, var(--card) 10px 20px, oklch(0.45 0.12 250) 20px 30px, var(--card) 30px 40px);
-  --shadow-card: 0 1px 0 oklch(0.85 0.02 70), 0 12px 30px -18px oklch(0.25 0.03 45 / 0.35);
-  --chart-1: oklch(0.72 0.12 70);
-  --chart-2: oklch(0.24 0.025 45);
-  --chart-3: oklch(0.55 0.12 150);
-  --chart-4: oklch(0.52 0.19 27);
-  --chart-5: oklch(0.6 0.01 60);
-  --sidebar: oklch(0.968 0.014 78);
-  --sidebar-foreground: oklch(0.2 0.02 45);
-  --sidebar-primary: oklch(0.24 0.025 45);
-  --sidebar-primary-foreground: oklch(0.97 0.014 78);
-  --sidebar-accent: oklch(0.92 0.02 75);
-  --sidebar-accent-foreground: oklch(0.24 0.025 45);
-  --sidebar-border: oklch(0.87 0.02 70);
-  --sidebar-ring: oklch(0.72 0.12 70);
+  --background: #0f0f0f;
+  --foreground: #f8f8f8;
+  --card: #202020;
+  --card-foreground: #f8f8f8;
+  --popover: #202020;
+  --popover-foreground: #f8f8f8;
+  --primary: #5dd62c;
+  --primary-foreground: #0f0f0f;
+  --secondary: #2a2a2a;
+  --secondary-foreground: #f8f8f8;
+  --muted: #1a1a1a;
+  --muted-foreground: #a3a3a3;
+  --accent: #337418;
+  --accent-foreground: #f8f8f8;
+  --destructive: #e5484d;
+  --destructive-foreground: #f8f8f8;
+  --border: #2e2e2e;
+  --input: #3a3a3a;
+  --ring: #5dd62c;
+  --ok: #5dd62c;
+  --ok-soft: #1b2d13;
+  --warn: #e5b53a;
+  --warn-soft: #2b2414;
+  --danger: #f05252;
+  --danger-soft: #2e1717;
+  --pending: #6b6b6b;
+  --pending-soft: #1a1a1a;
+  --stripe: repeating-linear-gradient(135deg, #5dd62c 0 10px, #f8f8f8 10px 20px, #337418 20px 30px, #f8f8f8 30px 40px);
+  --shadow-card: 0 1px 0 rgb(255 255 255 / 0.04) inset, 0 12px 30px -18px rgb(0 0 0 / 0.9);
+  --chart-1: #5dd62c;
+  --chart-2: #337418;
+  --chart-3: #a3a3a3;
+  --chart-4: #f05252;
+  --chart-5: #6b6b6b;
+  --sidebar: #0f0f0f;
+  --sidebar-foreground: #f8f8f8;
+  --sidebar-primary: #5dd62c;
+  --sidebar-primary-foreground: #0f0f0f;
+  --sidebar-accent: #202020;
+  --sidebar-accent-foreground: #f8f8f8;
+  --sidebar-border: #2e2e2e;
+  --sidebar-ring: #5dd62c;
 }
 
 @layer base {
