@@ -1,0 +1,18 @@
+# /etc/systemd/system/conectorcaixa.service
+# Ativar: sudo systemctl daemon-reload && sudo systemctl enable --now conectorcaixa
+[Unit]
+Description=Conferente de Caixa - Navalha da Corte
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/opt/conectorcaixa
+EnvironmentFile=/etc/conectorcaixa.env
+Environment=NODE_ENV=production
+ExecStart=/usr/bin/node .output/server/index.mjs
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
